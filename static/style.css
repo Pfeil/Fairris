@@ -1,0 +1,90 @@
+:root {
+    /* COLOR PALETTE */
+    --color-bg1: #F5F6F4;
+    --color-bg2: #D1D3C4;
+    --color-highlight: #BDC696;
+    --color-fg1: #775253;
+    --color-fg2: #1F363D;
+
+    --color-ok: lightgreen;
+}
+
+body {
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+}
+
+#everything {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-areas: 
+        "s c c c";
+    background-color: var(--color-bg1);
+    height: inherit;
+    width: inherit;
+}
+
+.maincolumns {
+    max-height: 100%;
+    max-width: 100%;
+    height: inherit;
+    display: flex;
+    flex-direction: column;
+}
+
+#sidebar {
+    grid-area: s;
+    /* background-color: aliceblue; */
+}
+
+#content {
+    grid-area: c;
+    /* background-color: lightcyan; */
+    overflow-y: scroll;
+    padding: 2em;
+    max-width: calc( 100% - 4em);
+    max-height: calc( 100% - 8em);
+}
+
+#pidbuttons {
+    background-color: var(--color-fg2);
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+#pidbuttons button {
+    font-size: larger;
+}
+
+.piditem {
+    background-color: var(--color-bg2);
+    padding: 0.5em;
+    /* border: 0.1em solid black; */
+    margin: 0.4em;
+}
+
+p {
+    margin: 0.5em;
+}
+
+#content button {
+    display: block;
+    width: 100%;
+}
+
+.okbutton {
+    font-size: larger;
+    background-color:var(--color-ok);
+}
+
+.column-form {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.scroll-vertical {
+    overflow-y: scroll;
+    scrollbar-color: var(--color-highlight) var(--color-bg2);
+}
