@@ -1,38 +1,49 @@
 #![recursion_limit = "1024"]
 
+mod model_impl;
+mod create_component;
+mod details_component;
+mod search_component;
+
+use model_impl::*;
+use create_component::*;
+use details_component::*;
+use search_component::*;
+
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
-// use yew_router::{route::Route, service::RouteService, Switch};
+use yew_router::{prelude::*, Switch, router::Router};
 
-mod model_impl;
-use model_impl::*;
 
-// #[derive(Switch, Debug)]
-// pub enum AppRoute {
-//     #[to = "/profile/{id}"]
-//     Profile(u32),
-//     #[to = "/forum{*:rest}"]
-//     Forum(ForumRoute),
-//     #[to = "/"]
-//     Index,
-// }
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
+#[derive(Switch, Debug, Clone)]
+pub enum AppRoute {
+    #[to = "/create"]
+    CreateFdo,
+    #[to = "/fdo/{id}"]
+    Details(String),
+    #[to = "/search"]
+    Search,
+    #[to = "/"]
+    Index,
+}
 
 struct Model {
     link: ComponentLink<Self>,
     known_pids: Vec<PidInfo>,
-    view: View,
 }
 
 #[derive(Eq, PartialEq)]
 enum Msg {
-    ChangeView(View),
     Remove,
-    ButtonRegisterFDO,
 }
 
 impl Component for Model {
     type Message = Msg;
     type Properties = ();
+
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
         Self {
             link,
@@ -42,15 +53,14 @@ impl Component for Model {
                 PidInfo::default(),
                 PidInfo::default(),
             ],
-            view: View::RegisterFdo,
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        match msg {
-            Msg::ChangeView(view) => self.view = view,
-            _ => (),
-        }
+    fn update(&mut self, _msg: Self::Message) -> ShouldRender {
+        //match msg {
+        //    Msg::ChangeView(view) => self.view = view,
+        //    _ => (),
+        //}
         true
     }
 
@@ -65,15 +75,23 @@ impl Component for Model {
             <div id="everything">
                 <div id="sidebar" class="maincolumns">
                     <div id="pidbuttons">
-                        <button onclick=self.link.callback(|_| Msg::ChangeView(View::RegisterFdo))>{ "+" }</button>
-                        <button onclick=self.link.callback(|_| Msg::ChangeView(View::Search))>{ "search" }</button>
-                        <button onclick=self.link.callback(|_| Msg::Remove)>{ "-" }</button>
+                        <RouterButton<AppRoute> route=AppRoute::CreateFdo>{ "+" }</RouterButton<AppRoute>>
+                        <RouterButton<AppRoute> route=AppRoute::Search>{ "search" }</RouterButton<AppRoute>>
+                        <button onclick=self.link.callback(|_| Msg::Remove)>{ "-" }</button>  // TODO this should create a callback to remove a pid.
                     </div>
                     <div id="workspace" class="scroll-vertical">
                         { for self.known_pids.iter().map(|pidinfo| pidinfo.to_html()) }  // TODO pitinfo should obviously be a component, probably with a link to Model.
                     </div>
                 </div>
-                { self.view_to_html() }
+                <Router<AppRoute, ()> render = Router::render(|switch: AppRoute| {
+                        match switch {
+                            AppRoute::CreateFdo => html!{<CreateComponent/>},
+                            AppRoute::Details(String) => html!{<DetailsComponent/>},
+                            AppRoute::Search => html!{<SearchComponent/>},
+                            AppRoute::Index => html!{<CreateComponent/>},
+                        }
+                    })
+                />
             </div>
         }
     }
