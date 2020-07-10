@@ -6,10 +6,10 @@ mod model_impl;
 mod pidinfo_component;
 mod search_component;
 
-use create_component::*;
-use details_component::*;
-use pidinfo_component::*;
-use search_component::*;
+use pidinfo_component::PidInfo;
+use create_component::CreateComponent;
+use details_component::DetailsComponent;
+use search_component::SearchComponent;
 
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
