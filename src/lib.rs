@@ -1,19 +1,19 @@
 #![recursion_limit = "1024"]
 
-mod model_impl;
 mod create_component;
 mod details_component;
+mod model_impl;
+mod pidinfo_component;
 mod search_component;
 
-use model_impl::*;
 use create_component::*;
 use details_component::*;
+use pidinfo_component::*;
 use search_component::*;
 
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
-use yew_router::{prelude::*, Switch, router::Router};
-
+use yew_router::{prelude::*, router::Router, Switch};
 
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
@@ -45,15 +45,16 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        Self {
-            link,
-            known_pids: vec![
-                PidInfo::default(),
-                PidInfo::default(),
-                PidInfo::default(),
-                PidInfo::default(),
-            ],
-        }
+        let mut known_pids = vec![
+            PidInfo::default(),
+            PidInfo::default(),
+            PidInfo::default(),
+            PidInfo::default(),
+        ];
+        known_pids.iter_mut().enumerate().for_each(|(num, info)| {
+            info.pid = format!("{}_{}", info.pid, num);
+        });
+        Self { link, known_pids }
     }
 
     fn update(&mut self, _msg: Self::Message) -> ShouldRender {
@@ -80,7 +81,7 @@ impl Component for Model {
                         <button onclick=self.link.callback(|_| Msg::Remove)>{ "-" }</button>  // TODO this should create a callback to remove a pid.
                     </div>
                     <div id="workspace" class="scroll-vertical">
-                        { for self.known_pids.iter().map(|pidinfo| pidinfo.to_html()) }  // TODO pitinfo should obviously be a component, probably with a link to Model.
+                        { for self.known_pids.iter().map(|pidinfo| pidinfo.render()) }
                     </div>
                 </div>
                 <Router<AppRoute, ()> render = Router::render(|switch: AppRoute| {
