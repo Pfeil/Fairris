@@ -1,14 +1,12 @@
 #![recursion_limit = "1024"]
 
 mod create_component;
-mod details_component;
 mod model_impl;
 mod pidinfo;
 mod search_component;
 
 use pidinfo::PidInfo;
 use create_component::CreateComponent;
-use details_component::DetailsComponent;
 use search_component::SearchComponent;
 
 use wasm_bindgen::prelude::*;
