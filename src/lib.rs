@@ -80,6 +80,7 @@ impl Component for Model {
                     </div>
                     <div id="workspace" class="scroll-vertical">
                         { for self.known_pids.iter().map(|pidinfo| pidinfo.view_as_list_item()) }
+                        // { self.pidinfo_as_details_page(&"kitdm/test/1234567890_1".into()) }  // TODO Just for testing. It works using it in here.
                     </div>
                 </div>
                 <Router<AppRoute, ()> render = Router::render(|switch: AppRoute| {
@@ -87,7 +88,8 @@ impl Component for Model {
                             AppRoute::CreateFdo => html!{<CreateComponent/>},
                             AppRoute::Details(pid) => {
                                 //html!{}
-                                self.view_pid_details(pid)
+                                //self.pidinfo_as_details_page(&pid)  // create html within the model
+                                //self.find_pidinfo_by_string(pid.as_str()).view_as_details_page()  // create html within the pitinfo
                             },
                             AppRoute::Search => html!{<SearchComponent/>},
                             AppRoute::Index => html!{<CreateComponent/>},
