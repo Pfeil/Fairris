@@ -3,10 +3,10 @@
 mod create_component;
 mod details_component;
 mod model_impl;
-mod pidinfo_component;
+mod pidinfo;
 mod search_component;
 
-use pidinfo_component::PidInfo;
+use pidinfo::PidInfo;
 use create_component::CreateComponent;
 use details_component::DetailsComponent;
 use search_component::SearchComponent;
@@ -81,13 +81,16 @@ impl Component for Model {
                         <button onclick=self.link.callback(|_| Msg::Remove)>{ "-" }</button>  // TODO this should create a callback to remove a pid.
                     </div>
                     <div id="workspace" class="scroll-vertical">
-                        { for self.known_pids.iter().map(|pidinfo| pidinfo.render()) }
+                        { for self.known_pids.iter().map(|pidinfo| pidinfo.view_as_list_item()) }
                     </div>
                 </div>
                 <Router<AppRoute, ()> render = Router::render(|switch: AppRoute| {
                         match switch {
                             AppRoute::CreateFdo => html!{<CreateComponent/>},
-                            AppRoute::Details(String) => html!{<DetailsComponent/>},
+                            AppRoute::Details(pid) => {
+                                //html!{}
+                                self.view_pid_details(pid)
+                            },
                             AppRoute::Search => html!{<SearchComponent/>},
                             AppRoute::Index => html!{<CreateComponent/>},
                         }
