@@ -40,6 +40,7 @@ pub struct Model {
 pub enum Msg {
     AddPidItem(PidInfo),
     Remove,
+    Error(String),
 }
 
 impl Component for Model {
@@ -53,8 +54,10 @@ impl Component for Model {
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
+        log::debug!("Model received update.");
         match msg {
             Msg::AddPidItem(item) => {
+                log::debug!("Adding new item: {:?}", item);
                 Rc::get_mut(&mut self.known_pids).unwrap_throw().insert(item.pid.clone(), item);
             },
             other => log::error!("Unimplemented message: {:?}", other),

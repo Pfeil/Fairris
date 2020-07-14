@@ -1,5 +1,10 @@
+use super::{Model, PidInfo};
+
 use yew::prelude::*;
-use super::Model;
+use yew::services::fetch::{FetchService, Request, Response};
+use yew::format::{Json, Nothing};
+use serde_json::json;
+use anyhow::Error;
 
 pub struct CreateComponent {
     link: ComponentLink<Self>,
@@ -29,6 +34,7 @@ pub enum Msg {
     ChangeLicense(ChangeData),
     ChangeVersion(ChangeData),
     SendForm,
+    Error(String),
 }
 
 impl Component for CreateComponent {
@@ -53,7 +59,7 @@ impl Component for CreateComponent {
             Msg::ChangeProfile(ChangeData::Select(input /*stdweb::web::html_element::SelectElement*/)) => {
                 log::info!("Change form profile to: ({:?}){:?}", input.selected_index(), input.value());
                 self.profile = Profile::from(input.selected_index());
-            },
+            }
             Msg::ChangeDataType(ChangeData::Select(input)) => {
                 log::info!("Change data type to: ({:?}){:?}", input.selected_index(), input.value());
                 self.data_type = DataType::from(input.selected_index());
@@ -74,6 +80,30 @@ impl Component for CreateComponent {
                 log::info!("Change version to: {}", version);
                 self.version = version;
             }
+            Msg::SendForm => {
+                // https://docs.rs/yew/0.17.2/yew/services/fetch/struct.FetchService.html#method.fetch
+                // TODO will need a complicated function to generate this
+                let content = &json!({"foo": "bar"});
+                // TODO fix the request, it's just a placeholder. Do not forget to expose the ports in docker.
+                let request = Request::get("https://www.rust-lang.org/")
+                    //.header("User-Agent", "awesome/1.0")
+                    .body(Nothing)
+                    //.header("Content-Type", "application/json")
+                    //.body(Json(content))
+                    .expect("Failed to build this request.");
+                let _task = FetchService::fetch(
+                    request,
+                    self.props.model_link.callback(|response: Response<Result<String, Error>>| {
+                        if response.status().is_success() {
+                            super::Msg::AddPidItem(PidInfo::default())  // TODO fix this
+                        } else {
+                            // TODO should not the form actually show some error here?
+                            super::Msg::Error(format!("HTTP error: {:?}", response))
+                        }
+                    }),
+                ).err().map(|e| log::error!("error: {}", e));
+                log::info!("SendForm has finished.");
+            }
             other => log::error!("Unimplemented message: {:?}", other),
         };
         true
@@ -83,7 +113,7 @@ impl Component for CreateComponent {
     }
     fn view(&self) -> Html {
         // TODO match self.profile ...
-        html!{
+        html! {
             <div id="content" class="maincolumns scroll-vertical">
                 <div class="column-form">
                     // profile selection
@@ -135,7 +165,7 @@ impl Component for CreateComponent {
                     <p>{ "No input here, therefore." }</p>
                     // version
                     <label class="form-description" for="fdo-version">{ "Object Version String:" }</label>
-                    <input class="form-input" type="text" id="fdo-version" required=true 
+                    <input class="form-input" type="text" id="fdo-version" required=true
                         onchange=self.link.callback(|e: ChangeData| Msg::ChangeVersion(e))
                     />
 
