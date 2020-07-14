@@ -1,9 +1,8 @@
-use yew::prelude::*;
 use super::AppRoute;
+use yew::prelude::*;
 use yew_router::prelude::*;
 
-
-#[derive(Eq, PartialEq, Clone)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 pub struct PidInfo {
     pub pid: String,
     pub description: String,
@@ -35,7 +34,7 @@ impl PidInfo {
 
     pub fn view_as_details_page(&self) -> Html {
         let pid = self.pid.clone();
-        html!{
+        html! {
             <div id="content" class="maincolumns scroll-vertical">
                 <div class="image-placeholder"><p>{ "IMAGE" }</p></div>
                 <div class="textblock">

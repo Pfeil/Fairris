@@ -1,9 +1,10 @@
 use yew::prelude::*;
-//use super::AppRoute;
-//use yew_router::prelude::*;
+use super::Model;
 
 pub struct CreateComponent {
     link: ComponentLink<Self>,
+    props: Props,
+
     profile: Profile,
 
     data_type: DataType,
@@ -12,6 +13,11 @@ pub struct CreateComponent {
     license: License,
     version: String,
     // TODO many data stuff
+}
+
+#[derive(Properties, Clone)]
+pub struct Props {
+    pub model_link: ComponentLink<Model>,
 }
 
 #[derive(Debug)]
@@ -27,11 +33,12 @@ pub enum Msg {
 
 impl Component for CreateComponent {
     type Message = Msg;
-    type Properties = ();
+    type Properties = Props;
 
-    fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         Self {
             link,
+            props,
             profile: Profile::default(),
             data_type: DataType::default(),
             data_url: String::new(),

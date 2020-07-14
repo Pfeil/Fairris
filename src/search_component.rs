@@ -16,7 +16,7 @@ impl Component for SearchComponent {
         false
     }
     fn view(&self) -> Html {
-        html!{
+        html! {
             <div id="content" class="maincolumns scroll-vertical">
                 <p>{ "Not implemented yet. This page would offer you to search for data with given properties." }</p>
             </div>

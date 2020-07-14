@@ -1,14 +1,14 @@
 #![recursion_limit = "1024"]
 
 mod create_component;
-mod model_impl;
+mod known_pids;
 mod pidinfo;
 mod search_component;
 
 use std::rc::Rc;
 
 use create_component::CreateComponent;
-use model_impl::*;
+use known_pids::*;
 use pidinfo::PidInfo;
 use search_component::SearchComponent;
 
@@ -24,20 +24,20 @@ pub enum AppRoute {
     #[to = "/create"]
     CreateFdo,
     #[to = "/fdo/{*:path}"]
-    Details{ path: String },
+    Details { path: String },
     #[to = "/search"]
     Search,
     #[to = "/"]
     Index,
 }
 
-struct Model {
+pub struct Model {
     link: ComponentLink<Self>,
     known_pids: Rc<KnownPids>,
 }
 
-#[derive(Eq, PartialEq)]
-enum Msg {
+#[derive(Eq, PartialEq, Debug)]
+pub enum Msg {
     Remove,
 }
 
@@ -46,16 +46,16 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let mut known_pids: Rc<KnownPids> = Rc::new(KnownPids::default());
+        let known_pids: Rc<KnownPids> = Rc::new(KnownPids::default());
 
         Self { link, known_pids }
     }
 
-    fn update(&mut self, _msg: Self::Message) -> ShouldRender {
-        //match msg {
-        //    Msg::ChangeView(view) => self.view = view,
-        //    _ => (),
-        //}
+    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+        match msg {
+            Msg::Remove => log::info!("Remove was called!"),
+            _ => (),
+        }
         true
     }
 
@@ -67,17 +67,17 @@ impl Component for Model {
 
     fn view(&self) -> Html {
         let known_pids = self.known_pids.clone();
+        let model_link = self.link.clone();
         let router_function = move |switch: AppRoute| {
             match switch {
-                AppRoute::CreateFdo => html! {<CreateComponent/>},
-                AppRoute::Details {ref path} => {
+                AppRoute::CreateFdo => html! {<CreateComponent model_link=model_link.clone() />},
+                AppRoute::Details { ref path } => {
                     //html!{}
                     log::info!("Got id: {}", path);
-                    known_pids.pidinfo_as_details_page(path) // create html within the model
-                                                            //self.find_pidinfo_by_string(pid.as_str()).view_as_details_page()  // create html within the pitinfo
+                    known_pids.find(path).view_as_details_page()
                 }
                 AppRoute::Search => html! {<SearchComponent/>},
-                AppRoute::Index => html! {<CreateComponent/>},
+                AppRoute::Index => html! {<CreateComponent model_link=model_link.clone() />},
             }
         };
         html! {
@@ -90,7 +90,6 @@ impl Component for Model {
                     </div>
                     <div id="workspace" class="scroll-vertical">
                         { for self.known_pids.iter().map(|pidinfo| pidinfo.view_as_list_item()) }
-                        // { self.pidinfo_as_details_page(&"kitdm/test/1234567890_1".into()) }  // TODO Just for testing. It works using it in here.
                     </div>
                 </div>
                 <Router<AppRoute, ()> render = Router::render(router_function)
