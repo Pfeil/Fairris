@@ -19,7 +19,7 @@ impl KnownPids {
 impl Default for KnownPids {
     fn default() -> Self {
         log::info!("Will insert some dummy Pid objects for testing.");
-        let mut pids = vec![
+        let pids = vec![
             PidInfo::default(),
             PidInfo::default(),
             PidInfo::default(),
