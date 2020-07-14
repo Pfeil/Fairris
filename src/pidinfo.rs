@@ -33,19 +33,18 @@ impl PidInfo {
     }
 
     pub fn view_as_details_page(&self) -> Html {
-        let pid = self.pid.clone();
         html! {
             <div id="content" class="maincolumns scroll-vertical">
-                <div class="image-placeholder"><p>{ "IMAGE" }</p></div>
-                <div class="textblock">
-                    <p>{ format!("{}: {}", "PID:", pid) }</p>
-                    <p>{ "Print PID Record here." }</p>
-                    <p>{ "Print PID Record here." }</p>
-                    <p>{ "Print PID Record here." }</p>
-                    <p>{ "Print PID Record here." }</p>
-                    <p>{ "Print PID Record here." }</p>
-                    <p>{ "Print PID Record here." }</p>
-                    <p>{ "Print PID Record here." }</p>
+                <div class="two-column-lefty">
+                    <div class="image-placeholder"><p>{ "IMAGE" }</p></div>
+                    <div class="two-column-lefty">
+                        <p class="align-right">{ "PID:" }</p>
+                        <p>{ self.pid.as_str() }</p>
+                        <p class="align-right">{ "Description:" }</p>
+                        <p>{ self.description.as_str() }</p>
+                        <p class="align-right">{ "Status:" }</p>
+                        <p>{ self.status.as_str() }</p>
+                    </div>
                 </div>
                 <div class="fdo-actions"><p>{ "Placeholder for Action Buttons here." }</p></div>
                 <div class="action-placeholder"><p>{ "Placeholder for action visualization. This could be i.e. viewing raw metadata, visualizations, or the possibility to update your FDO." }</p></div>

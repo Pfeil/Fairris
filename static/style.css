@@ -89,3 +89,19 @@ p {
     overflow-y: scroll;
     scrollbar-color: var(--color-highlight) var(--color-bg2);
 }
+
+.align-right {
+    text-align: right;
+}
+
+.two-column-lefty {
+    display: grid;
+    grid-template-columns: auto 1fr;
+}
+
+.image-placeholder {
+    display: block;
+    text-align: center;
+    background-color: gray;
+    border: medium solid black;
+}
