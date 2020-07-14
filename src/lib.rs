@@ -5,8 +5,11 @@ mod model_impl;
 mod pidinfo;
 mod search_component;
 
-use pidinfo::PidInfo;
+use std::rc::Rc;
+
 use create_component::CreateComponent;
+use model_impl::*;
+use pidinfo::PidInfo;
 use search_component::SearchComponent;
 
 use wasm_bindgen::prelude::*;
@@ -20,8 +23,8 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub enum AppRoute {
     #[to = "/create"]
     CreateFdo,
-    #[to = "/fdo/{id}"]
-    Details(String),
+    #[to = "/fdo/{path}"]
+    Details{ path: String },
     #[to = "/search"]
     Search,
     #[to = "/"]
@@ -30,7 +33,7 @@ pub enum AppRoute {
 
 struct Model {
     link: ComponentLink<Self>,
-    known_pids: Vec<PidInfo>,
+    known_pids: Rc<KnownPids>,
 }
 
 #[derive(Eq, PartialEq)]
@@ -43,15 +46,8 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let mut known_pids = vec![
-            PidInfo::default(),
-            PidInfo::default(),
-            PidInfo::default(),
-            PidInfo::default(),
-        ];
-        known_pids.iter_mut().enumerate().for_each(|(num, info)| {
-            info.pid = format!("{}_{}", info.pid, num);
-        });
+        let mut known_pids: Rc<KnownPids> = Rc::new(KnownPids::default());
+
         Self { link, known_pids }
     }
 
@@ -70,16 +66,17 @@ impl Component for Model {
     }
 
     fn view(&self) -> Html {
-        let router_function = |switch: AppRoute| {
+        let known_pids = self.known_pids.clone();
+        let router_function = move |switch: AppRoute| {
             match switch {
-                AppRoute::CreateFdo => html!{<CreateComponent/>},
-                AppRoute::Details(ref pid) => {
+                AppRoute::CreateFdo => html! {<CreateComponent/>},
+                AppRoute::Details {ref path} => {
                     //html!{}
-                    self.pidinfo_as_details_page(pid)  // create html within the model
-                    //self.find_pidinfo_by_string(pid.as_str()).view_as_details_page()  // create html within the pitinfo
-                },
-                AppRoute::Search => html!{<SearchComponent/>},
-                AppRoute::Index => html!{<CreateComponent/>},
+                    known_pids.pidinfo_as_details_page(path) // create html within the model
+                                                            //self.find_pidinfo_by_string(pid.as_str()).view_as_details_page()  // create html within the pitinfo
+                }
+                AppRoute::Search => html! {<SearchComponent/>},
+                AppRoute::Index => html! {<CreateComponent/>},
             }
         };
         html! {

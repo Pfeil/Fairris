@@ -25,7 +25,7 @@ impl PidInfo {
         let pid = self.pid.clone();
         html! {
                 // TODO make sure that in the details page, the actual data is shown.
-                <RouterButton<AppRoute> route=AppRoute::Details(pid) classes="piditem">
+                <RouterButton<AppRoute> route=AppRoute::Details{path: pid} classes="piditem">
                     <p>{ self.pid.clone() }</p>
                     <p>{ self.description.clone() }</p>
                     <p>{ self.status.clone() }</p>
