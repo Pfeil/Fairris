@@ -70,6 +70,18 @@ impl Component for Model {
     }
 
     fn view(&self) -> Html {
+        let router_function = |switch: AppRoute| {
+            match switch {
+                AppRoute::CreateFdo => html!{<CreateComponent/>},
+                AppRoute::Details(ref pid) => {
+                    //html!{}
+                    self.pidinfo_as_details_page(pid)  // create html within the model
+                    //self.find_pidinfo_by_string(pid.as_str()).view_as_details_page()  // create html within the pitinfo
+                },
+                AppRoute::Search => html!{<SearchComponent/>},
+                AppRoute::Index => html!{<CreateComponent/>},
+            }
+        };
         html! {
             <div id="everything">
                 <div id="sidebar" class="maincolumns">
@@ -83,18 +95,7 @@ impl Component for Model {
                         // { self.pidinfo_as_details_page(&"kitdm/test/1234567890_1".into()) }  // TODO Just for testing. It works using it in here.
                     </div>
                 </div>
-                <Router<AppRoute, ()> render = Router::render(|switch: AppRoute| {
-                        match switch {
-                            AppRoute::CreateFdo => html!{<CreateComponent/>},
-                            AppRoute::Details(pid) => {
-                                //html!{}
-                                //self.pidinfo_as_details_page(&pid)  // create html within the model
-                                //self.find_pidinfo_by_string(pid.as_str()).view_as_details_page()  // create html within the pitinfo
-                            },
-                            AppRoute::Search => html!{<SearchComponent/>},
-                            AppRoute::Index => html!{<CreateComponent/>},
-                        }
-                    })
+                <Router<AppRoute, ()> render = Router::render(router_function)
                 />
             </div>
         }
