@@ -23,7 +23,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub enum AppRoute {
     #[to = "/create"]
     CreateFdo,
-    #[to = "/fdo/{path}"]
+    #[to = "/fdo/{*:path}"]
     Details{ path: String },
     #[to = "/search"]
     Search,
@@ -72,6 +72,7 @@ impl Component for Model {
                 AppRoute::CreateFdo => html! {<CreateComponent/>},
                 AppRoute::Details {ref path} => {
                     //html!{}
+                    log::info!("Got id: {}", path);
                     known_pids.pidinfo_as_details_page(path) // create html within the model
                                                             //self.find_pidinfo_by_string(pid.as_str()).view_as_details_page()  // create html within the pitinfo
                 }
