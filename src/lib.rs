@@ -38,6 +38,7 @@ pub struct Model {
 
 #[derive(Eq, PartialEq, Debug)]
 pub enum Msg {
+    AddPidItem(PidInfo),
     Remove,
 }
 
@@ -53,8 +54,10 @@ impl Component for Model {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Msg::Remove => log::info!("Remove was called!"),
-            _ => (),
+            Msg::AddPidItem(item) => {
+                Rc::get_mut(&mut self.known_pids).unwrap_throw().insert(item.pid.clone(), item);
+            },
+            other => log::error!("Unimplemented message: {:?}", other),
         }
         true
     }
@@ -89,7 +92,7 @@ impl Component for Model {
                         <button onclick=self.link.callback(|_| Msg::Remove)>{ "-" }</button>  // TODO this should create a callback to remove a pid.
                     </div>
                     <div id="workspace" class="scroll-vertical">
-                        { for self.known_pids.iter().map(|pidinfo| pidinfo.view_as_list_item()) }
+                        { for self.known_pids.iter().map(|(_pid, pidinfo)| pidinfo.view_as_list_item()) }
                     </div>
                 </div>
                 <Router<AppRoute, ()> render = Router::render(router_function)
