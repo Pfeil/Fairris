@@ -1,7 +1,7 @@
 use super::{Model, PidInfo};
 
 use yew::prelude::*;
-use yew::services::fetch::{FetchService, Request, Response};
+use yew::services::{fetch::{FetchService, Request, Response, FetchTask}};
 use yew::format::{Json, Nothing};
 use serde_json::json;
 use anyhow::Error;
@@ -9,6 +9,7 @@ use anyhow::Error;
 pub struct CreateComponent {
     link: ComponentLink<Self>,
     props: Props,
+    task: Option<FetchTask>,
 
     profile: Profile,
 
@@ -45,6 +46,7 @@ impl Component for CreateComponent {
         Self {
             link,
             props,
+            task: None,
             profile: Profile::default(),
             data_type: DataType::default(),
             data_url: String::new(),
@@ -86,12 +88,12 @@ impl Component for CreateComponent {
                 let content = &json!({"foo": "bar"});
                 // TODO fix the request, it's just a placeholder. Do not forget to expose the ports in docker.
                 let request = Request::get("https://www.rust-lang.org/")
-                    //.header("User-Agent", "awesome/1.0")
+                    .header("Access-Control-Allow-Origin", "https://www.rust-lang.org/")
                     .body(Nothing)
                     //.header("Content-Type", "application/json")
                     //.body(Json(content))
                     .expect("Failed to build this request.");
-                let _task = FetchService::fetch(
+                let task = FetchService::fetch(
                     request,
                     self.props.model_link.callback(|response: Response<Result<String, Error>>| {
                         if response.status().is_success() {
@@ -101,7 +103,8 @@ impl Component for CreateComponent {
                             super::Msg::Error(format!("HTTP error: {:?}", response))
                         }
                     }),
-                ).err().map(|e| log::error!("error: {}", e));
+                ).map_err(|e| log::error!("Error requesting PID creation: {}", e));
+                self.task = task.ok();
                 log::info!("SendForm has finished.");
             }
             other => log::error!("Unimplemented message: {:?}", other),
