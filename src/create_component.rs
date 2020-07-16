@@ -85,14 +85,36 @@ impl Component for CreateComponent {
             Msg::SendForm => {
                 // https://docs.rs/yew/0.17.2/yew/services/fetch/struct.FetchService.html#method.fetch
                 // TODO will need a complicated function to generate this
-                let content = &json!({"foo": "bar"});
+                let content = &json!({
+                    "pid": "string",
+                    "entries": {
+                        "additionalProp1": [
+                        {
+                            "key": "string",
+                            "value": "string"
+                        }
+                        ],
+                        "additionalProp2": [
+                        {
+                            "key": "string2",
+                            "value": "string"
+                        }
+                        ],
+                        "additionalProp3": [
+                        {
+                            "key": "string3",
+                            "value": "string"
+                        }
+                        ]
+                    }
+                });
                 // TODO fix the request, it's just a placeholder. Do not forget to expose the ports in docker.
-                let request = Request::get("https://www.rust-lang.org/")
-                    .header("Access-Control-Allow-Origin", "https://www.rust-lang.org/")
-                    .body(Nothing)
-                    //.header("Content-Type", "application/json")
-                    //.body(Json(content))
-                    .expect("Failed to build this request.");
+                let request = Request::post("http://localhost:8080/api/v1/pit/pid/")
+                .body(Json(content))
+                //.header("Content-Type", "application/json")
+                //.body(Json(content))
+                .expect("Failed to build this request.");
+                log::debug!("Request: {:?}", request);
                 let task = FetchService::fetch(
                     request,
                     self.props.model_link.callback(|response: Response<Result<String, Error>>| {
