@@ -5,7 +5,7 @@ mod known_pids;
 mod pidinfo;
 mod search_component;
 
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use create_component::CreateComponent;
 use known_pids::*;
@@ -33,7 +33,7 @@ pub enum AppRoute {
 
 pub struct Model {
     link: ComponentLink<Self>,
-    known_pids: Rc<KnownPids>,
+    known_pids: Rc<RefCell<KnownPids>>,
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -48,7 +48,7 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let known_pids: Rc<KnownPids> = Rc::new(KnownPids::default());
+        let known_pids: Rc<RefCell<KnownPids>> = Rc::new(RefCell::new(KnownPids::default()));
 
         Self { link, known_pids }
     }
@@ -58,7 +58,7 @@ impl Component for Model {
         match msg {
             Msg::AddPidItem(item) => {
                 log::debug!("Adding new item: {:?}", item);
-                Rc::get_mut(&mut self.known_pids).unwrap_throw().insert(item.pid.clone(), item);
+                self.known_pids.borrow_mut().insert(item.pid.clone(), item);
             },
             other => log::error!("Unimplemented message: {:?}", other),
         }
@@ -80,7 +80,7 @@ impl Component for Model {
                 AppRoute::Details { ref path } => {
                     //html!{}
                     log::info!("Got id: {}", path);
-                    known_pids.find(path).view_as_details_page()
+                    known_pids.borrow().find(path).view_as_details_page()
                 }
                 AppRoute::Search => html! {<SearchComponent/>},
                 AppRoute::Index => html! {<CreateComponent model_link=model_link.clone() />},
@@ -95,7 +95,7 @@ impl Component for Model {
                         <button onclick=self.link.callback(|_| Msg::Remove)>{ "-" }</button>  // TODO this should create a callback to remove a pid.
                     </div>
                     <div id="workspace" class="scroll-vertical">
-                        { for self.known_pids.iter().map(|(_pid, pidinfo)| pidinfo.view_as_list_item()) }
+                        { for self.known_pids.borrow().iter().map(|(_pid, pidinfo)| pidinfo.view_as_list_item()) }
                     </div>
                 </div>
                 <Router<AppRoute, ()> render = Router::render(router_function)
