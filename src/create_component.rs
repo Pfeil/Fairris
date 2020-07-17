@@ -1,4 +1,5 @@
 use super::{Model, PidInfo};
+use super::rest_interface::PidRecord;
 
 use yew::prelude::*;
 use yew::services::{fetch::{FetchService, Request, Response, FetchTask}};
@@ -85,41 +86,24 @@ impl Component for CreateComponent {
             Msg::SendForm => {
                 // https://docs.rs/yew/0.17.2/yew/services/fetch/struct.FetchService.html#method.fetch
                 // TODO will need a complicated function to generate this
-                let content = &json!({
-                    "pid": "string",
-                    "entries": {
-                        "additionalProp1": [
-                        {
-                            "key": "string",
-                            "value": "string"
-                        }
-                        ],
-                        "additionalProp2": [
-                        {
-                            "key": "string2",
-                            "value": "string"
-                        }
-                        ],
-                        "additionalProp3": [
-                        {
-                            "key": "string3",
-                            "value": "string"
-                        }
-                        ]
-                    }
-                });
+                let mut info = PidInfo::default();
+                info.pid = String::new();
+                let content = serde_json::to_value(&PidRecord::from(info)).unwrap();
+                log::info!("pure json string: {}", &content);
                 // TODO fix the request, it's just a placeholder. Do not forget to expose the ports in docker.
-                let request = Request::post("http://localhost:8080/api/v1/pit/pid/")
-                .body(Json(content))
-                //.header("Content-Type", "application/json")
-                //.body(Json(content))
+                let request = Request::post("http://localhost:8060/api/v1/pit/pid/")
+                .header("Content-Type", "application/json")
+                .body(Json(&content))
                 .expect("Failed to build this request.");
                 log::debug!("Request: {:?}", request);
                 let task = FetchService::fetch(
                     request,
                     self.props.model_link.callback(|response: Response<Result<String, Error>>| {
                         if response.status().is_success() {
-                            super::Msg::AddPidItem(PidInfo::default())  // TODO fix this
+                            log::info!("Response body: {}", response.body().as_ref().unwrap());
+                            let item: PidRecord = serde_json::from_str(response.body().as_ref().unwrap().as_str()).unwrap();
+                            let item = item.into();
+                            super::Msg::AddPidItem(item)  // TODO fix this
                         } else {
                             // TODO should not the form actually show some error here?
                             super::Msg::Error(format!("HTTP error: {:?}", response))
