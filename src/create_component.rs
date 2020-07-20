@@ -84,26 +84,24 @@ impl Component for CreateComponent {
                 self.version = version;
             }
             Msg::SendForm => {
-                // https://docs.rs/yew/0.17.2/yew/services/fetch/struct.FetchService.html#method.fetch
-                // TODO will need a complicated function to generate this
-                let mut info = PidInfo::default();
-                info.pid = String::new();
-                let content = serde_json::to_value(&PidRecord::from(info)).unwrap();
-                log::info!("pure json string: {}", &content);
-                // TODO fix the request, it's just a placeholder. Do not forget to expose the ports in docker.
-                let request = Request::post("http://localhost:8060/api/v1/pit/pid/")
-                .header("Content-Type", "application/json")
-                .body(Json(&content))
-                .expect("Failed to build this request.");
+                let new_object = self.extract_record();
+                log::debug!("json object: {}", &new_object);
+                let request = Request::post("http://localhost:8090/api/v1/pit/pid/")
+                    .header("Content-Type", "application/json")
+                    .body(Json(&new_object))
+                    .expect("Failed to build this request.");
                 log::debug!("Request: {:?}", request);
                 let task = FetchService::fetch(
                     request,
                     self.props.model_link.callback(|response: Response<Result<String, Error>>| {
                         if response.status().is_success() {
                             log::info!("Response body: {}", response.body().as_ref().unwrap());
-                            let item: PidRecord = serde_json::from_str(response.body().as_ref().unwrap().as_str()).unwrap();
+                            let item: PidRecord = serde_json::from_str(
+                                response.body().as_ref().expect("Get reference from body.").as_str()
+                            ).expect("Deserialize PidRecord from body.");
+                            log::debug!("Got record from response successfully.");
                             let item = item.into();
-                            super::Msg::AddPidItem(item)  // TODO fix this
+                            super::Msg::AddPidItem(item)
                         } else {
                             // TODO should not the form actually show some error here?
                             super::Msg::Error(format!("HTTP error: {:?}", response))
@@ -121,103 +119,120 @@ impl Component for CreateComponent {
         false
     }
     fn view(&self) -> Html {
-        // TODO match self.profile ...
-        html! {
-            <div id="content" class="maincolumns scroll-vertical">
-                <div class="column-form">
-                    // profile selection
-                    <label class="form-description" for="profile-select">{ "Profile:" }</label>
-                    <select class="form-input" id="profile-select"
-                            onchange=self.link.callback(|e: ChangeData| Msg::ChangeProfile(e))>
-                        <option>{ "Annotated Images (Pair(s) of Image file + PageAnnotation)" }</option>
-                        //<option>{ "Metadata Document" }</option>
-                    </select>
-                    // data type
-                    <label class="form-description" for="fdo-type">{ "Digital Object Data Type:" }</label>
-                    <select class="form-input" id="fdo-type" onchange=self.link.callback(|e: ChangeData| Msg::ChangeDataType(e))>
-                        <option>{ "image/TIFF (media-type-IANA-image)" }</option>
-                        <option>{ "image/PNG  (media-type-IANA-image)" }</option>
-                    </select>
-                    // Data URL
-                    <label class="form-description" for="fdo-data-url">{ "Digital Object Data URL (or Handle?):" }</label>
-                    <input class="form-input" type="url" id="fdo-data-url"  required=true
-                        onchange=self.link.callback(|e: ChangeData| Msg::ChangeDataURL(e))
-                    />
-                    // Lifecycle
-                    <label class="form-description" for="fdo-lifecycle">{ "Lifecycle:" }</label>
-                    <select class="form-input" id="fdo-lifecycle"
-                            onchange=self.link.callback(|e: ChangeData| Msg::ChangeLifecycle(e))>
-                        <option>{ "static" }</option>
-                        <option>{ "dynamic and regular updates" }</option>
-                        <option>{ "dynamic and irregular updates" }</option>
-                    </select>
-                    // License
-                    <label class="form-description" for="fdo-license">{ "License:" }</label>
-                    <select class="form-input" id="fdo-license"
-                            onchange=self.link.callback(|e: ChangeData| Msg::ChangeLicense(e))>
-                        <option>{ "MIT" }</option>
-                        <option>{ "Apache" }</option>
-                        <option>{ "CC-by" }</option>
-                        <option>{ "other (choose from field)" }</option>
-                    </select>
-                    // Hash
-                    // TODO calculate hash yourself? (download image and calculate)
-                    <label class="form-description" for="fdo-etag">{ "etag (object hash):" }</label>
-                    <select class="form-input" id="fdo-etag"
-                            onchange=self.link.callback(|e: ChangeData| Msg::ChangeLicense(e))>
-                        <option>{ "Calculate from Location Body" }</option>
-                        <option>{ "Provide manually (TODO create-text-unput on selection)" }</option>
-                        <option>{ "What if the location is a stream?" }</option>
-                    </select>
-
-                    <p>{ "Assumption: Date of creation/modification is done by the pit/pid-service" }</p>
-                    <p>{ "No input here, therefore." }</p>
-                    // version
-                    <label class="form-description" for="fdo-version">{ "Object Version String:" }</label>
-                    <input class="form-input" type="text" id="fdo-version" required=true
-                        onchange=self.link.callback(|e: ChangeData| Msg::ChangeVersion(e))
-                    />
-
-                    <p>{ "The following input fields are there because of the PID Kernel Information Recommendations." }</p>
-                    <p>{ "They are temporarily ignored because they are not included in the HMC profile this demo uses." }</p>
-
-                    <label class="form-description" for="fdo-metadata">{ "Metadata handle:" }</label>
-                    <input class="form-input" type="text" id="fdo-metadata" required=true />
-
-                    <label class="form-description" for="derived-from">{ "Derived from (handles):" }</label>
-                    <input class="form-input" type="text" id="derived-from" required=true />
-
-                    <label class="form-description" for="specialization-of">{ "Specialization of (handles):" }</label>
-                    <input class="form-input" type="text" id="specialization-of" required=true />
-
-                    <label class="form-description" for="revision-of">{ "Revision of (handles):" }</label>
-                    <input class="form-input" type="text" id="revision-of" required=true />
-
-                    <label class="form-description" for="primary-source">{ "Primary sources (handles):" }</label>
-                    <input class="form-input" type="text" id="primary-source" required=true />
-
-                    <label class="form-description" for="quoted-from">{ "Quoted from (handles):" }</label>
-                    <input class="form-input" type="text" id="quoted-from" required=true />
-
-                    <label class="form-description" for="alternate-of">{ "Alternative of (handles):" }</label>
-                    <input class="form-input" type="text" id="alternate-of" required=true />
+        match self.profile {
+            Profile::AnnotatedImageProfile => html! {
+                <div id="content" class="maincolumns scroll-vertical">
+                    <div class="column-form">
+                        // profile selection
+                        <label class="form-description" for="profile-select">{ "Profile:" }</label>
+                        <select class="form-input" id="profile-select"
+                                onchange=self.link.callback(|e: ChangeData| Msg::ChangeProfile(e))>
+                            <option>{ "Annotated Images (Pair(s) of Image file + PageAnnotation)" }</option>
+                            <option>{ "Other profile (manual)" }</option>
+                            //<option>{ "Metadata Document" }</option>
+                        </select>
+                        // data type
+                        <label class="form-description" for="fdo-type">{ "Digital Object Data Type:" }</label>
+                        <select class="form-input" id="fdo-type" onchange=self.link.callback(|e: ChangeData| Msg::ChangeDataType(e))>
+                            <option>{ "image/TIFF (media-type-IANA-image)" }</option>
+                            <option>{ "image/PNG  (media-type-IANA-image)" }</option>
+                        </select>
+                        // Data URL
+                        <label class="form-description" for="fdo-data-url">{ "Digital Object Data URL (or Handle?):" }</label>
+                        <input class="form-input" type="url" id="fdo-data-url"  required=true
+                            onchange=self.link.callback(|e: ChangeData| Msg::ChangeDataURL(e))
+                        />
+                        // Lifecycle
+                        <label class="form-description" for="fdo-lifecycle">{ "Lifecycle:" }</label>
+                        <select class="form-input" id="fdo-lifecycle"
+                                onchange=self.link.callback(|e: ChangeData| Msg::ChangeLifecycle(e))>
+                            <option>{ "static" }</option>
+                            <option>{ "dynamic and regular updates" }</option>
+                            <option>{ "dynamic and irregular updates" }</option>
+                        </select>
+                        // License
+                        <label class="form-description" for="fdo-license">{ "License:" }</label>
+                        <select class="form-input" id="fdo-license"
+                                onchange=self.link.callback(|e: ChangeData| Msg::ChangeLicense(e))>
+                            <option>{ "MIT" }</option>
+                            <option>{ "Apache" }</option>
+                            <option>{ "CC-by" }</option>
+                            <option>{ "other (choose from field)" }</option>
+                        </select>
+                        // Hash
+                        // TODO calculate hash yourself? (download image and calculate)
+                        <label class="form-description" for="fdo-etag">{ "etag (object hash):" }</label>
+                        <select class="form-input" id="fdo-etag"
+                                onchange=self.link.callback(|e: ChangeData| Msg::ChangeLicense(e))>
+                            <option>{ "Calculate from Location Body" }</option>
+                            <option>{ "Provide manually (TODO create-text-unput on selection)" }</option>
+                            <option>{ "What if the location is a stream?" }</option>
+                        </select>
+    
+                        <p>{ "Assumption: Date of creation/modification is done by the pit/pid-service" }</p>
+                        <p>{ "No input here, therefore." }</p>
+                        // version
+                        <label class="form-description" for="fdo-version">{ "Object Version String:" }</label>
+                        <input class="form-input" type="text" id="fdo-version" required=true
+                            onchange=self.link.callback(|e: ChangeData| Msg::ChangeVersion(e))
+                        />
+    
+                        <p>{ "The following input fields are there because of the PID Kernel Information Recommendations." }</p>
+                        <p>{ "They are temporarily ignored because they are not included in the HMC profile this demo uses." }</p>
+    
+                        <label class="form-description" for="fdo-metadata">{ "Metadata handle:" }</label>
+                        <input class="form-input" type="text" id="fdo-metadata" required=true />
+    
+                        <label class="form-description" for="derived-from">{ "Derived from (handles):" }</label>
+                        <input class="form-input" type="text" id="derived-from" required=true />
+    
+                        <label class="form-description" for="specialization-of">{ "Specialization of (handles):" }</label>
+                        <input class="form-input" type="text" id="specialization-of" required=true />
+    
+                        <label class="form-description" for="revision-of">{ "Revision of (handles):" }</label>
+                        <input class="form-input" type="text" id="revision-of" required=true />
+    
+                        <label class="form-description" for="primary-source">{ "Primary sources (handles):" }</label>
+                        <input class="form-input" type="text" id="primary-source" required=true />
+    
+                        <label class="form-description" for="quoted-from">{ "Quoted from (handles):" }</label>
+                        <input class="form-input" type="text" id="quoted-from" required=true />
+    
+                        <label class="form-description" for="alternate-of">{ "Alternative of (handles):" }</label>
+                        <input class="form-input" type="text" id="alternate-of" required=true />
+                    </div>
+                    // This Button does the following:
+                    // 1. Initiate a HTTP request to the PIT-Service to fulfill
+                    // 2. Create a PidInfo object to store in the main model.
+                    <button class="okbutton" onclick=self.link.callback(|_| Msg::SendForm)>{ "Create FDO Record" }</button>
+    
                 </div>
-                // TODO This Button shall do the following:
-                // 1. Initiate a HTTP request to the PIT-Service to fulfill
-                // 2. Create a PidInfo Object to store in the main Model, somehow (Callback, Bridge, Agent, ...).
-                // 3. Redirect to the details page of the new object. This may be done by the model handling the new object or by this component.
-                //<RouterButton<AppRoute> route=AppRoute::CreateFdo classes="okbutton">{ "Create FDO Record" }</RouterButton<AppRoute>>
-                <button class="okbutton" onclick=self.link.callback(|_| Msg::SendForm)>{ "Create FDO Record" }</button>
-
-            </div>
+            },
+            _ => html!{<div>{ "Not implemented yet." }</div>}
         }
     }
 }
 
+impl CreateComponent {
+    fn extract_record(&self) -> serde_json::Value {
+        let mut record = PidRecord::default();
+        self.profile.set_into(&mut record);
+        serde_json::to_value(record).unwrap()
+    }
+}
+
 // TODO do this with a macro
+// TODO implement recordproperty for all structs below
+// TODO move them to another place
+// TODO recordproperties should be able to generate their own html, maybe?
+
+trait RecordProperty {
+    fn set_into(&self, record: &mut PidRecord);
+}
 
 enum Profile {
     AnnotatedImageProfile,
+    OtherProfile,
 }
 
 impl Default for Profile {
@@ -232,6 +247,18 @@ impl From<i32> for Profile {
             0 => Self::AnnotatedImageProfile,
             _ => Self::default(),
         }
+    }
+}
+
+impl RecordProperty for Profile {
+    fn set_into(&self, record: &mut PidRecord) {
+        let id = "21.T11148/076759916209e5d62bd5".into();
+        let name = "KernelInformationProfile".into();
+        let hmc_profile = "21.T11148/3626040cadcac1571685".into();
+        match self {
+            Profile::AnnotatedImageProfile => record.set_attribute(id, name, hmc_profile),
+            Profile::OtherProfile => {}
+        };
     }
 }
 
@@ -253,6 +280,19 @@ impl From<i32> for DataType {
             1 => Self::Png,
             _ => Self::default(),
         }
+    }
+}
+
+impl RecordProperty for DataType {
+    fn set_into(&self, record: &mut PidRecord) {
+        let id = "21.T11148/1c699a5d1b4ad3ba4956".into();
+        let name = "digitalObjectType".into();
+        let image = "21.T11148/2834eac0159f584bcf05".into();
+        // TODO how to set the image type png/tiff?
+        match self {
+            DataType::Tiff => record.set_attribute(id, name, image),
+            DataType::Png  => record.set_attribute(id, name, image),
+        };
     }
 }
 

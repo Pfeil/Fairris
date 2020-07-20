@@ -1,9 +1,8 @@
-/// This file contains structs that can be serialized into and deserialized from JSON.
-/// They may contain methods to convert them into more usable structs.
-
-use serde::{Serialize, Deserialize};
-use ::std::collections::HashMap;
+//! This file contains structs that can be serialized into and deserialized from JSON.
+//! They may contain methods to convert them into more usable structs.
 use crate::pidinfo::PidInfo;
+use ::std::collections::HashMap;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct PidRecordEntry {
@@ -31,19 +30,33 @@ pub struct PidRecord {
 
 impl PidRecord {
     fn get_attribute(&mut self, attribute: &str) -> String {
-        self.entries.remove(attribute).and_then(|mut vec| {
-            vec.pop().and_then(|entry| {
-                Some(entry.value)
-            })
-        }).unwrap_or("Not found.".into())
+        self.entries
+            .remove(attribute)
+            .and_then(|mut vec| vec.pop().and_then(|entry| Some(entry.value)))
+            .unwrap_or(format!("Value to attribute \"{}\" not found.", attribute))
+    }
+
+    pub fn set_attribute(&mut self, id: String, name: String, value: String) {
+        let entry = PidRecordEntry {
+            key: id.clone(),
+            name,
+            value,
+        };
+        self.entries.insert(id, vec![entry]);
     }
 }
 
 impl From<PidInfo> for PidRecord {
     fn from(info: PidInfo) -> Self {
         let mut map = HashMap::new();
-        map.insert("description".into(), vec![PidRecordEntry::from("description".into(), info.description)]);
-        map.insert("status".into(), vec![PidRecordEntry::from("status".into(), info.status)]);
+        map.insert(
+            "description".into(),
+            vec![PidRecordEntry::from("description".into(), info.description)],
+        );
+        map.insert(
+            "status".into(),
+            vec![PidRecordEntry::from("status".into(), info.status)],
+        );
         PidRecord {
             pid: info.pid,
             entries: map,
