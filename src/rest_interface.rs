@@ -3,16 +3,17 @@
 use crate::pidinfo::PidInfo;
 use ::std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use serde_json as json;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct PidRecordEntry {
     pub key: String,
     pub name: String,
-    pub value: String,
+    pub value: json::Value,
 }
 
 impl PidRecordEntry {
-    fn from(key: String, value: String) -> Self {
+    fn from(key: String, value: json::Value) -> Self {
         PidRecordEntry {
             key: key.clone(),
             name: key,
@@ -29,20 +30,31 @@ pub struct PidRecord {
 }
 
 impl PidRecord {
-    fn get_attribute(&mut self, attribute: &str) -> String {
+    fn extract_attribute(&mut self, attribute: &str) -> json::Value {
         self.entries
             .remove(attribute)
             .and_then(|mut vec| vec.pop().and_then(|entry| Some(entry.value)))
-            .unwrap_or(format!("Value to attribute \"{}\" not found.", attribute))
+            .unwrap_or(json::Value::String(format!("Value to attribute \"{}\" not found.", attribute)))
     }
 
-    pub fn set_attribute(&mut self, id: String, name: String, value: String) {
+    pub fn add_attribute(&mut self, id: String, name: String, value: json::Value) {
         let entry = PidRecordEntry {
             key: id.clone(),
             name,
             value,
         };
-        self.entries.insert(id, vec![entry]);
+        let values = self.entries.entry(id.clone()).or_insert(Vec::new());
+        values.push(entry);
+    }
+
+    pub fn add_attribute_to_value_object(&mut self, id: String, name: String, internal_value: json::Value) {
+        let x = self.entries.entry(id).and_modify(|vec| {
+            for entry in vec {
+                if let json::Value::Object(ref map) = entry.value {
+
+                }
+            }
+        });
     }
 }
 
@@ -51,11 +63,11 @@ impl From<PidInfo> for PidRecord {
         let mut map = HashMap::new();
         map.insert(
             "description".into(),
-            vec![PidRecordEntry::from("description".into(), info.description)],
+            vec![PidRecordEntry::from("description".into(), json::Value::String(info.description))],
         );
         map.insert(
             "status".into(),
-            vec![PidRecordEntry::from("status".into(), info.status)],
+            vec![PidRecordEntry::from("status".into(), json::Value::String(info.status))],
         );
         PidRecord {
             pid: info.pid,
@@ -67,8 +79,8 @@ impl From<PidInfo> for PidRecord {
 impl From<PidRecord> for PidInfo {
     fn from(mut record: PidRecord) -> Self {
         PidInfo {
-            description: record.get_attribute("description"),
-            status: record.get_attribute("status"),
+            description: record.extract_attribute("description").as_str().unwrap().into(),
+            status: record.extract_attribute("status").as_str().unwrap().into(),
             pid: record.pid,
         }
     }

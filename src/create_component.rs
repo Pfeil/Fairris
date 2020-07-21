@@ -256,7 +256,7 @@ impl RecordProperty for Profile {
         let name = "KernelInformationProfile".into();
         let hmc_profile = "21.T11148/3626040cadcac1571685".into();
         match self {
-            Profile::AnnotatedImageProfile => record.set_attribute(id, name, hmc_profile),
+            Profile::AnnotatedImageProfile => record.add_attribute(id, name, hmc_profile),
             Profile::OtherProfile => {}
         };
     }
@@ -290,8 +290,8 @@ impl RecordProperty for DataType {
         let image = "21.T11148/2834eac0159f584bcf05".into();
         // TODO how to set the image type png/tiff?
         match self {
-            DataType::Tiff => record.set_attribute(id, name, image),
-            DataType::Png  => record.set_attribute(id, name, image),
+            DataType::Tiff => record.add_attribute(id, name, image),
+            DataType::Png  => record.add_attribute(id, name, image),
         };
     }
 }
