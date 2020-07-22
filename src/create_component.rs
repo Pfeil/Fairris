@@ -1,25 +1,32 @@
-use super::{Model, PidInfo};
+use super::Model;
 use super::rest_interface::PidRecord;
 
 use yew::prelude::*;
 use yew::services::{fetch::{FetchService, Request, Response, FetchTask}};
-use yew::format::{Json, Nothing};
-use serde_json::json;
+use yew::format::Json;
 use anyhow::Error;
+use serde_json as json;
 
 pub struct CreateComponent {
     link: ComponentLink<Self>,
     props: Props,
     task: Option<FetchTask>,
 
-    profile: Profile,
-
-    data_type: DataType,
+    profile: Profile,  // should work
+    data_type: DataType,  // should work
     data_url: String,
-    lifecycle: Lifecycle,
-    license: License,
+    policy: Policy,  // should work
+    etag: Checksum,  // should work
+    // TODO optional date_modified: String,
+    date_created: String,
     version: String,
-    // TODO many data stuff
+    // TODO many optional handles:
+    //derived_from: Pid,
+    //specialization_of: Pid,
+    //revision_of: Pid,
+    //primary_source: Pid,
+    //quoted_from: Pid,
+    //alternate_of: Pid,
 }
 
 #[derive(Properties, Clone)]
@@ -48,11 +55,13 @@ impl Component for CreateComponent {
             link,
             props,
             task: None,
+
             profile: Profile::default(),
             data_type: DataType::default(),
-            data_url: String::new(),
-            lifecycle: Lifecycle::default(),
-            license: License::default(),
+            data_url: String::from("https://example.com/file.tiff"),
+            policy: Policy::default(),
+            etag: Checksum::default(),
+            date_created: String::from("InvalidDate"),
             version: String::new(),
         }
     }
@@ -73,11 +82,11 @@ impl Component for CreateComponent {
             }
             Msg::ChangeLifecycle(ChangeData::Select(input)) => {
                 log::info!("Change lifecycle to: ({:?}){:?}", input.selected_index(), input.value());
-                self.lifecycle = Lifecycle::from(input.selected_index());
+                self.policy.lifecycle = Lifecycle::from(input.selected_index());
             }
             Msg::ChangeLicense(ChangeData::Select(input)) => {
                 log::info!("Change license to: ({:?}){:?}", input.selected_index(), input.value());
-                self.license = License::from(input.selected_index());
+                self.policy.license = License::from(input.selected_index());
             }
             Msg::ChangeVersion(ChangeData::Value(version)) => {
                 log::info!("Change version to: {}", version);
@@ -124,51 +133,20 @@ impl Component for CreateComponent {
                 <div id="content" class="maincolumns scroll-vertical">
                     <div class="column-form">
                         // profile selection
-                        <label class="form-description" for="profile-select">{ "Profile:" }</label>
-                        <select class="form-input" id="profile-select"
-                                onchange=self.link.callback(|e: ChangeData| Msg::ChangeProfile(e))>
-                            <option>{ "Annotated Images (Pair(s) of Image file + PageAnnotation)" }</option>
-                            <option>{ "Other profile (manual)" }</option>
-                            //<option>{ "Metadata Document" }</option>
-                        </select>
+                        { self.profile.display_form(&self.link) }
                         // data type
-                        <label class="form-description" for="fdo-type">{ "Digital Object Data Type:" }</label>
-                        <select class="form-input" id="fdo-type" onchange=self.link.callback(|e: ChangeData| Msg::ChangeDataType(e))>
-                            <option>{ "image/TIFF (media-type-IANA-image)" }</option>
-                            <option>{ "image/PNG  (media-type-IANA-image)" }</option>
-                        </select>
+                        { self.data_type.display_form(&self.link) }
                         // Data URL
                         <label class="form-description" for="fdo-data-url">{ "Digital Object Data URL (or Handle?):" }</label>
                         <input class="form-input" type="url" id="fdo-data-url"  required=true
                             onchange=self.link.callback(|e: ChangeData| Msg::ChangeDataURL(e))
                         />
-                        // Lifecycle
-                        <label class="form-description" for="fdo-lifecycle">{ "Lifecycle:" }</label>
-                        <select class="form-input" id="fdo-lifecycle"
-                                onchange=self.link.callback(|e: ChangeData| Msg::ChangeLifecycle(e))>
-                            <option>{ "static" }</option>
-                            <option>{ "dynamic and regular updates" }</option>
-                            <option>{ "dynamic and irregular updates" }</option>
-                        </select>
-                        // License
-                        <label class="form-description" for="fdo-license">{ "License:" }</label>
-                        <select class="form-input" id="fdo-license"
-                                onchange=self.link.callback(|e: ChangeData| Msg::ChangeLicense(e))>
-                            <option>{ "MIT" }</option>
-                            <option>{ "Apache" }</option>
-                            <option>{ "CC-by" }</option>
-                            <option>{ "other (choose from field)" }</option>
-                        </select>
-                        // Hash
-                        // TODO calculate hash yourself? (download image and calculate)
-                        <label class="form-description" for="fdo-etag">{ "etag (object hash):" }</label>
-                        <select class="form-input" id="fdo-etag"
-                                onchange=self.link.callback(|e: ChangeData| Msg::ChangeLicense(e))>
-                            <option>{ "Calculate from Location Body" }</option>
-                            <option>{ "Provide manually (TODO create-text-unput on selection)" }</option>
-                            <option>{ "What if the location is a stream?" }</option>
-                        </select>
-    
+                        // Policy
+                        { self.policy.display_form(&self.link) }
+                        // Checksum
+                        { self.etag.display_form(&self.link) }
+
+                        // TODO this is not correct. The data may be significantly older than the FDO.
                         <p>{ "Assumption: Date of creation/modification is done by the pit/pid-service" }</p>
                         <p>{ "No input here, therefore." }</p>
                         // version
@@ -217,6 +195,8 @@ impl CreateComponent {
     fn extract_record(&self) -> serde_json::Value {
         let mut record = PidRecord::default();
         self.profile.set_into(&mut record);
+        self.data_type.set_into(&mut record);
+        self.policy.set_into(&mut record);
         serde_json::to_value(record).unwrap()
     }
 }
@@ -226,8 +206,12 @@ impl CreateComponent {
 // TODO move them to another place
 // TODO recordproperties should be able to generate their own html, maybe?
 
+type Pid = String;
+
 trait RecordProperty {
+    // TODO better name, like write_into or so.
     fn set_into(&self, record: &mut PidRecord);
+    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html;
 }
 
 enum Profile {
@@ -259,6 +243,20 @@ impl RecordProperty for Profile {
             Profile::AnnotatedImageProfile => record.add_attribute(id, name, hmc_profile),
             Profile::OtherProfile => {}
         };
+    }
+
+    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
+        html! {
+            <>
+                <label class="form-description" for="profile-select">{ "Profile:" }</label>
+                <select class="form-input" id="profile-select"
+                        onchange=link.callback(|e: ChangeData| Msg::ChangeProfile(e))>
+                    <option>{ "Annotated Images (Pair(s) of Image file + PageAnnotation)" }</option>
+                    <option>{ "Other profile (manual)" }</option>
+                    //<option>{ "Metadata Document" }</option>
+                </select>
+            </>
+        }
     }
 }
 
@@ -293,6 +291,61 @@ impl RecordProperty for DataType {
             DataType::Tiff => record.add_attribute(id, name, image),
             DataType::Png  => record.add_attribute(id, name, image),
         };
+    }
+
+    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
+        html! {
+            <>
+                <label class="form-description" for="fdo-type">{ "Digital Object Data Type:" }</label>
+                <select class="form-input" id="fdo-type" onchange=link.callback(|e: ChangeData| Msg::ChangeDataType(e))>
+                    <option>{ "image/TIFF (media-type-IANA-image)" }</option>
+                    <option>{ "image/PNG  (media-type-IANA-image)" }</option>
+                </select>
+            </>
+        }
+    }
+}
+
+#[derive(Default)]
+struct Policy {
+    lifecycle: Lifecycle,
+    license: License,
+    tombstone: Option<String>,
+}
+
+impl RecordProperty for Policy {
+    fn set_into(&self, record: &mut PidRecord) {
+        // 1. create value
+        let id: String = "21.T11148/8074aed799118ac263ad".into();
+        let name: String = "digitalObjectPolicy".into();
+        // TODO implement real pid to fitting object
+        let value = json::Value::String(format!("policy/default"));
+        // 2. set into record
+        record.add_attribute(id, name, value);
+        // TODO record.add_attribute(...);
+    }
+
+    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
+        html! {
+            <>  // Lifecycle
+                <label class="form-description" for="fdo-lifecycle">{ "Lifecycle:" }</label>
+                <select class="form-input" id="fdo-lifecycle"
+                        onchange=link.callback(|e: ChangeData| Msg::ChangeLifecycle(e))>
+                    <option>{ "static" }</option>
+                    <option>{ "dynamic and regular updates" }</option>
+                    <option>{ "dynamic and irregular updates" }</option>
+                </select>
+                // License
+                <label class="form-description" for="fdo-license">{ "License:" }</label>
+                <select class="form-input" id="fdo-license"
+                        onchange=link.callback(|e: ChangeData| Msg::ChangeLicense(e))>
+                    <option>{ "MIT" }</option>
+                    <option>{ "Apache" }</option>
+                    <option>{ "CC-by" }</option>
+                    <option>{ "other (choose from field)" }</option>
+                </select>
+            </>
+        }
     }
 }
 
@@ -340,4 +393,57 @@ impl From<i32> for License {
             _ => Self::default(),
         }
     }
+}
+
+
+enum HashAlgorithm {
+    Sha256sum,
+}
+
+impl Default for HashAlgorithm {
+    fn default() -> Self {
+        Self::Sha256sum
+    }
+}
+
+struct Checksum {
+    algorithm: HashAlgorithm,
+    value: String,
+}
+
+impl Default for Checksum {
+    fn default() -> Self {
+        Checksum {
+            algorithm: Default::default(),
+            value: "dummyhash".into(),
+        }
+    }
+}
+
+impl RecordProperty for Checksum {
+    fn set_into(&self, record: &mut PidRecord) {
+        let id = "21.T11148/92e200311a56800b3e47".into();
+        let name = "etag".into();
+        let value = json::json!({
+            "21.T11148/82e2503c49209e987740": {
+                "sha256sum": json::Value::String(self.value.clone())
+            }
+        });
+        record.add_attribute(id, name, value);
+    }
+    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
+        // TODO just a dummy.
+        html! {
+        <> // TODO calculate hash yourself? (download image and calculate)
+            <label class="form-description" for="fdo-etag">{ "etag (object hash):" }</label>
+            <select class="form-input" id="fdo-etag"
+                    onchange=link.callback(|e: ChangeData| Msg::ChangeLicense(e))>
+                <option>{ "Calculate from Location Body" }</option>
+                <option>{ "Provide manually (TODO create-text-unput on selection)" }</option>
+                <option>{ "What if the location is a stream?" }</option>
+            </select>
+        </>
+        }
+    }
+    
 }

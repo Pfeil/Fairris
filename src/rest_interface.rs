@@ -46,16 +46,6 @@ impl PidRecord {
         let values = self.entries.entry(id.clone()).or_insert(Vec::new());
         values.push(entry);
     }
-
-    pub fn add_attribute_to_value_object(&mut self, id: String, name: String, internal_value: json::Value) {
-        let x = self.entries.entry(id).and_modify(|vec| {
-            for entry in vec {
-                if let json::Value::Object(ref map) = entry.value {
-
-                }
-            }
-        });
-    }
 }
 
 impl From<PidInfo> for PidRecord {
