@@ -21,6 +21,7 @@ anyhow = "1"
 
 serde_json = "1"
 serde = "1"
+chrono = { version = "0.4", features = ["serde", "wasmbind"] }
 
 wee_alloc = "0.4"
 log = "0.4"

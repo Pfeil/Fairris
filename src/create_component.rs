@@ -6,6 +6,7 @@ use yew::services::{fetch::{FetchService, Request, Response, FetchTask}};
 use yew::format::Json;
 use anyhow::Error;
 use serde_json as json;
+use chrono::prelude::*;
 
 pub struct CreateComponent {
     link: ComponentLink<Self>,
@@ -14,11 +15,11 @@ pub struct CreateComponent {
 
     profile: Profile,  // should work
     data_type: DataType,  // should work
-    data_url: String,
+    data_url: ObjectLocation, // should work
     policy: Policy,  // should work
     etag: Checksum,  // should work
     // TODO optional date_modified: String,
-    date_created: String,
+    date_created: DateTimeHandle,
     version: String,
     // TODO many optional handles:
     //derived_from: Pid,
@@ -58,10 +59,10 @@ impl Component for CreateComponent {
 
             profile: Profile::default(),
             data_type: DataType::default(),
-            data_url: String::from("https://example.com/file.tiff"),
+            data_url: ObjectLocation::default(),
             policy: Policy::default(),
             etag: Checksum::default(),
-            date_created: String::from("InvalidDate"),
+            date_created: DateTimeHandle::default(),
             version: String::new(),
         }
     }
@@ -78,7 +79,7 @@ impl Component for CreateComponent {
             }
             Msg::ChangeDataURL(ChangeData::Value(url)) => {
                 log::info!("Change data URL to: {}", url);
-                self.data_url = url;
+                self.data_url.0 = url;
             }
             Msg::ChangeLifecycle(ChangeData::Select(input)) => {
                 log::info!("Change lifecycle to: ({:?}){:?}", input.selected_index(), input.value());
@@ -137,18 +138,14 @@ impl Component for CreateComponent {
                         // data type
                         { self.data_type.display_form(&self.link) }
                         // Data URL
-                        <label class="form-description" for="fdo-data-url">{ "Digital Object Data URL (or Handle?):" }</label>
-                        <input class="form-input" type="url" id="fdo-data-url"  required=true
-                            onchange=self.link.callback(|e: ChangeData| Msg::ChangeDataURL(e))
-                        />
+                        { self.data_url.display_form(&self.link) }
                         // Policy
                         { self.policy.display_form(&self.link) }
                         // Checksum
                         { self.etag.display_form(&self.link) }
 
-                        // TODO this is not correct. The data may be significantly older than the FDO.
-                        <p>{ "Assumption: Date of creation/modification is done by the pit/pid-service" }</p>
-                        <p>{ "No input here, therefore." }</p>
+                        // creationDateTime
+                        { self.date_created.display_form(&self.link) }
                         // version
                         <label class="form-description" for="fdo-version">{ "Object Version String:" }</label>
                         <input class="form-input" type="text" id="fdo-version" required=true
@@ -196,7 +193,10 @@ impl CreateComponent {
         let mut record = PidRecord::default();
         self.profile.set_into(&mut record);
         self.data_type.set_into(&mut record);
+        self.data_url.set_into(&mut record);
         self.policy.set_into(&mut record);
+        self.etag.set_into(&mut record);
+        self.date_created.set_into(&mut record);
         serde_json::to_value(record).unwrap()
     }
 }
@@ -238,9 +238,9 @@ impl RecordProperty for Profile {
     fn set_into(&self, record: &mut PidRecord) {
         let id = "21.T11148/076759916209e5d62bd5".into();
         let name = "KernelInformationProfile".into();
-        let hmc_profile = "21.T11148/3626040cadcac1571685".into();
+        let recommended_profile = "21.T11148/0c5636e4d82b88f86132".into();
         match self {
-            Profile::AnnotatedImageProfile => record.add_attribute(id, name, hmc_profile),
+            Profile::AnnotatedImageProfile => record.add_attribute(id, name, recommended_profile),
             Profile::OtherProfile => {}
         };
     }
@@ -415,7 +415,7 @@ impl Default for Checksum {
     fn default() -> Self {
         Checksum {
             algorithm: Default::default(),
-            value: "dummyhash".into(),
+            value: "c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c".into(),
         }
     }
 }
@@ -424,11 +424,11 @@ impl RecordProperty for Checksum {
     fn set_into(&self, record: &mut PidRecord) {
         let id = "21.T11148/92e200311a56800b3e47".into();
         let name = "etag".into();
+        //let value = json::Value::String(format!("{}", self.value));
         let value = json::json!({
-            "21.T11148/82e2503c49209e987740": {
-                "sha256sum": json::Value::String(self.value.clone())
-            }
+            "sha256sum": json::Value::String(format!("sha256: {}", self.value))
         });
+        let value = json::Value::String(value.to_string());  // PIT service only parses json strings as values
         record.add_attribute(id, name, value);
     }
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
@@ -444,6 +444,62 @@ impl RecordProperty for Checksum {
             </select>
         </>
         }
+    }
+    
+}
+
+struct ObjectLocation(String);
+
+impl Default for ObjectLocation {
+    fn default() -> Self {
+        // TODO this default is for testing only. It should be empty and the component should handle the case of an invalid url properly.
+        ObjectLocation("https://example.com/image.tiff".into())
+    }
+}
+
+impl RecordProperty for ObjectLocation {
+    fn set_into(&self, record: &mut PidRecord) {
+        let id = "21.T11148/b8457812905b83046284".into();
+        let name = "digitalObjectLocation".into();
+        let value = json::Value::String(self.0.clone());
+        record.add_attribute(id, name, value);
+    }
+    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
+        html!(
+            <>
+                <label class="form-description" for="fdo-data-url">{ "Digital Object Data URL (or Handle?):" }</label>
+                <input class="form-input" type="url" id="fdo-data-url"  required=true
+                    onchange=link.callback(|e: ChangeData| Msg::ChangeDataURL(e))
+                />
+            </>
+        )
+    }
+    
+}
+
+struct DateTimeHandle(DateTime<Utc>);
+
+impl Default for DateTimeHandle {
+    fn default() -> Self {
+        // TODO this default is for testing only. It should be empty and the component should handle the case of an invalid url properly.
+        DateTimeHandle(Utc::now())
+    }
+}
+
+impl RecordProperty for DateTimeHandle {
+    fn set_into(&self, record: &mut PidRecord) {
+        let id = "21.T11148/29f92bd203dd3eaa5a1f".into();
+        let name = "dateCreated".into();
+        let value = json::Value::String(self.0.to_rfc3339());
+        record.add_attribute(id, name, value);
+    }
+    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
+        html!(
+            <>
+                <label class="form-description" for="fdo-data-url">{ "creation date and time:" }</label>
+                <p>{ "TODO (date time chooser or free text field)" }</p>
+            </>
+        )
     }
     
 }
