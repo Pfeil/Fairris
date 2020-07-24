@@ -490,7 +490,7 @@ impl RecordProperty for DateTimeHandle {
     fn set_into(&self, record: &mut PidRecord) {
         let id = "21.T11148/29f92bd203dd3eaa5a1f".into();
         let name = "dateCreated".into();
-        let value = json::Value::String(self.0.to_rfc3339());
+        let value = json::Value::String( format!("{}", self.0.format("%F %T")) );
         record.add_attribute(id, name, value);
     }
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
