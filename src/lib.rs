@@ -4,7 +4,7 @@ mod create_component;
 mod known_pids;
 mod pidinfo;
 mod search_component;
-mod rest_interface;
+mod service_communication;
 
 use std::{cell::RefCell, rc::Rc};
 

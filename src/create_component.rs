@@ -1,12 +1,14 @@
 use super::Model;
-use super::rest_interface::PidRecord;
+use super::service_communication::{
+    pit_record::PidRecord,
+    datatypes::*,
+};
 
 use yew::prelude::*;
 use yew::services::{fetch::{FetchService, Request, Response, FetchTask}};
 use yew::format::Json;
 use anyhow::Error;
 use serde_json as json;
-use chrono::prelude::*;
 
 pub struct CreateComponent {
     link: ComponentLink<Self>,
@@ -79,7 +81,7 @@ impl Component for CreateComponent {
             }
             Msg::ChangeDataURL(ChangeData::Value(url)) => {
                 log::info!("Change data URL to: {}", url);
-                self.data_url.0 = url;
+                *self.data_url = url;
             }
             Msg::ChangeLifecycle(ChangeData::Select(input)) => {
                 log::info!("Change lifecycle to: ({:?}){:?}", input.selected_index(), input.value());
@@ -201,37 +203,13 @@ impl CreateComponent {
     }
 }
 
-// TODO do this with a macro
-// TODO implement recordproperty for all structs below
-// TODO move them to another place
-// TODO recordproperties should be able to generate their own html, maybe?
-
-type Pid = String;
-
+/// Types which implement this trait can be used to represent types of the data type repository,
+/// as they can set themselves into a given PidRecord.
+/// They can also display proper html Controls to control them.
 trait RecordProperty {
     // TODO better name, like write_into or so.
     fn set_into(&self, record: &mut PidRecord);
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html;
-}
-
-enum Profile {
-    AnnotatedImageProfile,
-    OtherProfile,
-}
-
-impl Default for Profile {
-    fn default() -> Self {
-        Self::AnnotatedImageProfile
-    }
-}
-
-impl From<i32> for Profile {
-    fn from(index: i32) -> Self {
-        match index {
-            0 => Self::AnnotatedImageProfile,
-            _ => Self::default(),
-        }
-    }
 }
 
 impl RecordProperty for Profile {
@@ -260,27 +238,6 @@ impl RecordProperty for Profile {
     }
 }
 
-enum DataType {
-    Tiff,
-    Png,
-}
-
-impl Default for DataType {
-    fn default() -> Self {
-        Self::Tiff
-    }
-}
-
-impl From<i32> for DataType {
-    fn from(index: i32) -> Self {
-        match index {
-            0 => Self::Tiff,
-            1 => Self::Png,
-            _ => Self::default(),
-        }
-    }
-}
-
 impl RecordProperty for DataType {
     fn set_into(&self, record: &mut PidRecord) {
         let id = "21.T11148/1c699a5d1b4ad3ba4956".into();
@@ -304,13 +261,6 @@ impl RecordProperty for DataType {
             </>
         }
     }
-}
-
-#[derive(Default)]
-struct Policy {
-    lifecycle: Lifecycle,
-    license: License,
-    tombstone: Option<String>,
 }
 
 impl RecordProperty for Policy {
@@ -349,77 +299,6 @@ impl RecordProperty for Policy {
     }
 }
 
-enum Lifecycle {
-    Static,
-    RegularUpdates,
-    IrregularUpdates,
-}
-
-impl Default for Lifecycle {
-    fn default() -> Self {
-        Self::Static
-    }
-}
-
-impl From<i32> for Lifecycle {
-    fn from(index: i32) -> Self {
-        match index {
-            0 => Self::Static,
-            1 => Self::RegularUpdates,
-            2 => Self::IrregularUpdates,
-            _ => Self::default(),
-        }
-    }
-}
-
-enum License {
-    MIT,
-    Apache,
-    CcBy,
-}
-
-impl Default for License {
-    fn default() -> Self {
-        Self::MIT
-    }
-}
-
-impl From<i32> for License {
-    fn from(index: i32) -> Self {
-        match index {
-            0 => Self::MIT,
-            1 => Self::Apache,
-            2 => Self::CcBy,
-            _ => Self::default(),
-        }
-    }
-}
-
-
-enum HashAlgorithm {
-    Sha256sum,
-}
-
-impl Default for HashAlgorithm {
-    fn default() -> Self {
-        Self::Sha256sum
-    }
-}
-
-struct Checksum {
-    algorithm: HashAlgorithm,
-    value: String,
-}
-
-impl Default for Checksum {
-    fn default() -> Self {
-        Checksum {
-            algorithm: Default::default(),
-            value: "c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c".into(),
-        }
-    }
-}
-
 impl RecordProperty for Checksum {
     fn set_into(&self, record: &mut PidRecord) {
         let id = "21.T11148/92e200311a56800b3e47".into();
@@ -431,6 +310,7 @@ impl RecordProperty for Checksum {
         let value = json::Value::String(value.to_string());  // PIT service only parses json strings as values
         record.add_attribute(id, name, value);
     }
+
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
         // TODO just a dummy.
         html! {
@@ -448,22 +328,14 @@ impl RecordProperty for Checksum {
     
 }
 
-struct ObjectLocation(String);
-
-impl Default for ObjectLocation {
-    fn default() -> Self {
-        // TODO this default is for testing only. It should be empty and the component should handle the case of an invalid url properly.
-        ObjectLocation("https://example.com/image.tiff".into())
-    }
-}
-
 impl RecordProperty for ObjectLocation {
     fn set_into(&self, record: &mut PidRecord) {
         let id = "21.T11148/b8457812905b83046284".into();
         let name = "digitalObjectLocation".into();
-        let value = json::Value::String(self.0.clone());
+        let value = json::Value::String((*self).clone());
         record.add_attribute(id, name, value);
     }
+
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
         html!(
             <>
@@ -477,22 +349,14 @@ impl RecordProperty for ObjectLocation {
     
 }
 
-struct DateTimeHandle(DateTime<Utc>);
-
-impl Default for DateTimeHandle {
-    fn default() -> Self {
-        // TODO this default is for testing only. It should be empty and the component should handle the case of an invalid url properly.
-        DateTimeHandle(Utc::now())
-    }
-}
-
 impl RecordProperty for DateTimeHandle {
     fn set_into(&self, record: &mut PidRecord) {
         let id = "21.T11148/29f92bd203dd3eaa5a1f".into();
         let name = "dateCreated".into();
-        let value = json::Value::String( format!("{}", self.0.format("%F %T")) );
+        let value = json::Value::String( format!("{}", self.format("%F %T")) );
         record.add_attribute(id, name, value);
     }
+    
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
         html!(
             <>

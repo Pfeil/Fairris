@@ -1,5 +1,5 @@
-//! This file contains structs that can be serialized into and deserialized from JSON.
-//! They may contain methods to convert them into more usable structs.
+//! This module contains a serializable record definition
+//! that is used by the PIT service.
 use crate::pidinfo::PidInfo;
 use ::std::collections::HashMap;
 use serde::{Deserialize, Serialize};
