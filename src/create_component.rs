@@ -9,6 +9,7 @@ use yew::services::{fetch::{FetchService, Request, Response, FetchTask}};
 use yew::format::Json;
 use anyhow::Error;
 use serde_json as json;
+use crate::pidinfo::PidInfo;
 
 pub struct CreateComponent {
     link: ComponentLink<Self>,
@@ -112,7 +113,7 @@ impl Component for CreateComponent {
                                 response.body().as_ref().expect("Get reference from body.").as_str()
                             ).expect("Deserialize PidRecord from body.");
                             log::debug!("Got record from response successfully.");
-                            let item = item.into();
+                            let item = PidInfo::from_registered(item);
                             super::Msg::AddPidItem(item)
                         } else {
                             // TODO should not the form actually show some error here?
@@ -178,9 +179,6 @@ impl Component for CreateComponent {
                         <label class="form-description" for="alternate-of">{ "Alternative of (handles):" }</label>
                         <input class="form-input" type="text" id="alternate-of" required=true />
                     </div>
-                    // This Button does the following:
-                    // 1. Initiate a HTTP request to the PIT-Service to fulfill
-                    // 2. Create a PidInfo object to store in the main model.
                     <button class="okbutton" onclick=self.link.callback(|_| Msg::SendForm)>{ "Create FDO Record" }</button>
     
                 </div>

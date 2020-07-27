@@ -59,7 +59,7 @@ impl Component for Model {
         match msg {
             Msg::AddPidItem(item) => {
                 log::debug!("Adding new item: {:?}", item);
-                self.known_pids.borrow_mut().insert(item.pid.clone(), item);
+                self.known_pids.borrow_mut().insert(item.pid().clone(), item);
             },
             other => log::error!("Unimplemented message: {:?}", other),
         }
