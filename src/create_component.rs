@@ -98,23 +98,19 @@ impl Component for CreateComponent {
             }
             Msg::SendForm => {
                 let new_object = self.extract_record();
-                log::debug!("json object: {}", &new_object);
                 let request = Request::post("http://localhost:8090/api/v1/pit/pid/")
                     .header("Content-Type", "application/json")
                     .body(Json(&new_object))
                     .expect("Failed to build this request.");
-                log::debug!("Request: {:?}", request);
                 let task = FetchService::fetch(
                     request,
                     self.props.model_link.callback(|response: Response<Result<String, Error>>| {
                         if response.status().is_success() {
-                            log::info!("Response body: {}", response.body().as_ref().unwrap());
-                            let item: PidRecord = serde_json::from_str(
+                            serde_json::from_str(
                                 response.body().as_ref().expect("Get reference from body.").as_str()
-                            ).expect("Deserialize PidRecord from body.");
-                            log::debug!("Got record from response successfully.");
-                            let item = PidInfo::from_registered(item);
-                            super::Msg::AddPidItem(item)
+                            ).and_then(|record| {
+                                Ok(super::Msg::AddPidItem(PidInfo::from_registered(record)))
+                            }).unwrap_or_else(|e| super::Msg::Error(format!("Error parsing record: {:?}", e)) )
                         } else {
                             // TODO should not the form actually show some error here?
                             super::Msg::Error(format!("HTTP error: {:?}", response))
@@ -354,7 +350,7 @@ impl RecordProperty for DateTimeHandle {
         let value = json::Value::String( format!("{}", self.format("%F %T")) );
         record.add_attribute(id, name, value);
     }
-    
+
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
         html!(
             <>
