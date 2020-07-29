@@ -3,6 +3,7 @@ use serde_json as json;
 use super::pit_record::PidRecord;
 use super::primitive_types as primitive;
 use super::RecordEntry;
+use std::ops::{Deref, DerefMut};
 
 impl RecordEntry for primitive::Profile {
     fn write(&self, record: &mut PidRecord) {
@@ -82,7 +83,7 @@ impl RecordEntry for DateCreated {
     fn write(&self, record: &mut PidRecord) {
         let id = "21.T11148/29f92bd203dd3eaa5a1f".into();
         let name = "dateCreated".into();
-        let value = json::Value::String( format!("{}", self.0.format("%F %T")) );
+        let value = json::Value::String(format!("{}", self.0.format("%F %T")));
         record.add_attribute(id, name, value);
     }
 }
@@ -94,20 +95,73 @@ impl RecordEntry for DateModified {
     fn write(&self, record: &mut PidRecord) {
         let id = "21.T11148/397d831aa3a9d18eb52c".into();
         let name = "dateModified".into();
-        let value = json::Value::String( format!("{}", self.0.to_rfc3339()) );
+        let value = json::Value::String(format!("{}", self.0.to_rfc3339()));
         record.add_attribute(id, name, value);
     }
 }
 
-pub type Version = String;
+#[derive(Default)]
+pub struct Version(String);
+
+newtype_deref!(Version, String);
 
 impl RecordEntry for Version {
     fn write(&self, record: &mut PidRecord) {
         if !self.is_empty() {
             let id = "21.T11148/c692273deb2772da307f".into();
             let name = "version".into();
-            let value = json::Value::String( self.clone() );
+            let value = json::Value::String(self.0.clone());
             record.add_attribute(id, name, value);
         }
     }
 }
+
+#[derive(Default)]
+pub struct MetadataDocumentPid(primitive::Pid);
+
+impl RecordEntry for MetadataDocumentPid {
+    fn write(&self, record: &mut PidRecord) {
+        let id = "21.T11148/e0efd6b4c8e71c6d077b".into(); // TODO asjust to actual type as soon as it exists
+        let name = "metadataObject".into();
+        let value = json::Value::String(self.0.clone());
+        record.add_attribute(id, name, value);
+    }
+}
+
+newtype_deref!(MetadataDocumentPid, primitive::Pid);
+
+#[derive(Default)]
+pub struct MetadataDocument {
+    pub scheme: primitive::PidProxy,
+    pub pid: primitive::PidProxy,
+    pub r#type: primitive::PidProxy,
+}
+
+impl RecordEntry for MetadataDocument {
+    fn write(&self, record: &mut PidRecord) {
+        let id = "21.T11148/e0efd6b4c8e71c6d077b".into();
+        let name = "metadataDocument".into();
+        // json::json!({ "sha256sum": json::Value::String(format!("sha256: {}", self.value)) })
+        let value = json::json!({
+            "metadataScheme": self.scheme,
+            "@id": self.pid,
+            "@type": self.r#type
+        });
+        let value = json::Value::String(value.to_string()); // PIT service only parses json strings as values
+        record.add_attribute(id, name, value);
+    }
+}
+
+#[derive(Default)]
+pub struct LicenseString(String);
+
+impl RecordEntry for LicenseString {
+    fn write(&self, record: &mut PidRecord) {
+        let id = "21.T11148/dc54ae4b6807f5887fda".into();
+        let name = "license".into();
+        let value = json::Value::String(self.0.clone());
+        record.add_attribute(id, name, value);
+    }
+}
+
+newtype_deref!(LicenseString, String);

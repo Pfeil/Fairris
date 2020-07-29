@@ -16,6 +16,7 @@ pub struct CreateComponent {
     link: ComponentLink<Self>,
     props: Props,
     task: Option<FetchTask>,
+    
     // common (mandatory)
     profile: Profile,
     data_type: DataType,
@@ -23,11 +24,19 @@ pub struct CreateComponent {
     policy: Policy,
     etag: Checksum,
     date_created: DateCreated,
+    
     // HMC profile (mandatory)
     date_modified: DateModified,
-    // metadata_document: MetadataDocument,
+    metadata_document: MetadataDocument,
+    license_string: LicenseString,
+    
+    // future own profile
+    metadata_document_pid: MetadataDocumentPid,
+    // TODO signature: Signature
+
     // common (optional)
     version: Version,
+
     // Recommended profile (optional)
     //derived_from: Pid,
     //specialization_of: Pid,
@@ -49,7 +58,20 @@ pub enum Msg {
     ChangeDataURL(ChangeData),
     ChangeLifecycle(ChangeData),
     ChangeLicense(ChangeData),
+    // IS_DUMMY ChangeChecksum(ChangeData),
+    // IS_DUMMY ChangeDateCreation(ChangeData),
+
     ChangeVersion(ChangeData),
+
+    // IS_DUMMY ChangeDateModification(ChangeData),
+    
+    ChangeMetadataPidUrl(ChangeData),
+    ChangeMetadataSchemaUrl(ChangeData),
+    ChangeMetadataTypeUrl(ChangeData),
+    ChangeLicenseString(ChangeData),
+
+    ChangeMetadataPid(ChangeData),
+    
     SendForm,
     Error(String),
 }
@@ -70,12 +92,18 @@ impl Component for CreateComponent {
             policy: Policy::default(),
             etag: Checksum::default(),
             date_created: DateCreated::default(),
+            version: Version::default(),
+
+            metadata_document: MetadataDocument::default(),
+            metadata_document_pid: MetadataDocumentPid::default(),
+            license_string: LicenseString::default(),
+
             date_modified: DateModified::default(),
-            version: String::new(),
         }
     }
+
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        log::debug!("Form Received an update: {:?}", msg);
+        log::debug!("Form received an update: {:?}", msg);
         match msg {
             Msg::ChangeProfile(ChangeData::Select(input /*stdweb::web::html_element::SelectElement*/)) => {
                 log::info!("Change form profile to: ({:?}){:?}", input.selected_index(), input.value());
@@ -85,10 +113,7 @@ impl Component for CreateComponent {
                 log::info!("Change data type to: ({:?}){:?}", input.selected_index(), input.value());
                 self.data_type = DataType::from(input.selected_index());
             }
-            Msg::ChangeDataURL(ChangeData::Value(url)) => {
-                log::info!("Change data URL to: {}", url);
-                *self.data_url = url;
-            }
+            Msg::ChangeDataURL(ChangeData::Value(url)) => *self.data_url = url,
             Msg::ChangeLifecycle(ChangeData::Select(input)) => {
                 log::info!("Change lifecycle to: ({:?}){:?}", input.selected_index(), input.value());
                 self.policy.lifecycle = Lifecycle::from(input.selected_index());
@@ -97,10 +122,12 @@ impl Component for CreateComponent {
                 log::info!("Change license to: ({:?}){:?}", input.selected_index(), input.value());
                 self.policy.license = License::from(input.selected_index());
             }
-            Msg::ChangeVersion(ChangeData::Value(version)) => {
-                log::info!("Change version to: {}", version);
-                self.version = version;
-            }
+            Msg::ChangeVersion(ChangeData::Value(version)) => *self.version = version,
+            Msg::ChangeMetadataPidUrl(ChangeData::Value(url)) => self.metadata_document.pid = url,
+            Msg::ChangeMetadataSchemaUrl(ChangeData::Value(url)) => self.metadata_document.scheme = url,
+            Msg::ChangeMetadataTypeUrl(ChangeData::Value(url)) => self.metadata_document.r#type = url,
+            Msg::ChangeLicenseString(ChangeData::Value(license)) => *self.license_string = license,
+            Msg::ChangeMetadataPid(ChangeData::Value(pid)) => *self.metadata_document_pid = pid,
             Msg::SendForm => {
                 let new_object = self.extract_record();
                 let request = Request::post("http://localhost:8090/api/v1/pit/pid/")
@@ -136,11 +163,9 @@ impl Component for CreateComponent {
         log::debug!("View was called. Profile is {:?}", self.profile);
         html! {
             <div id="content" class="maincolumns scroll-vertical">
+                <p>{ format!("Adjust the profile to get a form fitting your FDO. Current Profile is {:?}", self.profile) }</p>
                 <div class="two-column-lefty">
                     { self.profile.display_form(&self.link) }
-                    <p>{ "The following form is adjusted to this profile:" }</p>
-                    <p>{ format!("Profile is {:?}", self.profile) }</p>
-
                     { self.data_type.display_form(&self.link) }
                     { self.data_url.display_form(&self.link) }
                     { self.policy.display_form(&self.link) }
@@ -153,9 +178,6 @@ impl Component for CreateComponent {
                             Profile::RecommendedKernelProfile => html! {
                                 <>
                                 { self.date_modified.display_form(&self.link) }
-
-                                <label class="form-description" for="fdo-metadata">{ "Metadata handle:" }</label>
-                                <input class="form-input" type="text" id="fdo-metadata" required=true />
 
                                 <label class="form-description" for="derived-from">{ "Derived from (handles):" }</label>
                                 <input class="form-input" type="text" id="derived-from" required=true />
@@ -178,11 +200,8 @@ impl Component for CreateComponent {
                             },
                             Profile::HmcKernelProfile => html!{
                                 <>
-                                <p>{ "Metadata PID:" }</p>
-                                <p>{ "TODO implement" }</p>
-
-                                <p>{ "License:" }</p>
-                                <p>{ "TODO implement" }</p>
+                                { self.metadata_document.display_form(&self.link) }
+                                { self.license_string.display_form(&self.link) }
                                 </>
                             }
                         }
@@ -208,7 +227,10 @@ impl CreateComponent {
         // set special properties
         match self.profile {
             Profile::RecommendedKernelProfile => {}
-            Profile::HmcKernelProfile => {}
+            Profile::HmcKernelProfile => {
+                self.metadata_document.write(&mut record);
+                self.license_string.write(&mut record);
+            }
         }
         // common optionals
         self.date_modified.write(&mut record);
@@ -331,10 +353,57 @@ impl FormElement for Version {
         html!(
             <>
             <label class="form-description" for="fdo-version">{ "Object Version String:" }</label>
-            <input class="form-input" type="text" id="fdo-version" required=true
+            <input class="form-input" type="text" id="fdo-version"
                 onchange=link.callback(|e: ChangeData| Msg::ChangeVersion(e))
             />
             </>
         )
+    }
+}
+
+impl FormElement for MetadataDocumentPid {
+    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
+        html! {
+            <>
+            <label class="form-description" for="fdo-metadata">{ "Metadata handle:" }</label>
+            <input class="form-input" type="text" id="fdo-metadata" required=true
+                onchange=link.callback(|e: ChangeData| Msg::ChangeMetadataPid(e))
+            />
+            </>
+        }
+    }
+}
+
+impl FormElement for MetadataDocument {
+    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
+        html! {
+            <>
+            <label class="form-description" for="fdo-metadata-id">{ "Metadata PID as URL:" }</label>
+            <input class="form-input" type="text" id="fdo-metadata-id" required=true
+                onchange=link.callback(|e: ChangeData| Msg::ChangeMetadataPidUrl(e))
+            />
+            <label class="form-description" for="fdo-metadata-schema">{ "Metadatas schema PID as URL:" }</label>
+            <input class="form-input" type="text" id="fdo-metadata-schema" required=true
+                onchange=link.callback(|e: ChangeData| Msg::ChangeMetadataSchemaUrl(e))
+            />
+            <label class="form-description" for="fdo-metadata-type">{ "Metadatas type PID as URL:" }</label>
+            <input class="form-input" type="text" id="fdo-metadata-type" required=true
+                onchange=link.callback(|e: ChangeData| Msg::ChangeMetadataTypeUrl(e))
+            />
+            </>
+        }
+    }
+}
+
+impl FormElement for LicenseString {
+    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
+        html! {
+            <>
+            <label class="form-description" for="fdo-license">{ "License:" }</label>
+            <input class="form-input" type="text" id="fdo-license" required=true
+                onchange=link.callback(|e: ChangeData| Msg::ChangeLicenseString(e))
+            />
+            </>
+        }
     }
 }

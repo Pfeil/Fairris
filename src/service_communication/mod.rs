@@ -2,6 +2,7 @@
 //! and conversions between types for communicating with other
 //! services using JSON.
 
+#[macro_use]
 pub mod primitive_types;
 pub mod pit_record;
 pub mod types;

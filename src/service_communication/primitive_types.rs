@@ -2,7 +2,34 @@
 use chrono::prelude::*;
 use std::ops::{Deref, DerefMut};
 
+/// This macro will shorten boilerplate to implement Deref and DerefMut for simple Newtype patterns.
+/// deref() will resolve to &self.0
+/// deref_mut() will resolve to &mut self.0
+/// I recommend using *self instead of calling .deref() or .deref_mut() implicitly.
+macro_rules! newtype_deref {
+    ($name:ty, $target:ty) => {
+        impl Deref for $name {
+            type Target = $target;
+        
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
+        }
+        
+        impl DerefMut for $name {
+            fn deref_mut(&mut self) -> &mut Self::Target {
+                &mut self.0
+            }
+        }       
+    };
+}
+
 pub type Pid = String;
+
+/// A Pid embedded into a URL which will resolve it.
+/// Represents http://dtr-test.pidconsortium.net/#objects/21.T11148/8bcd7b4a8a9c74402c71
+// TODO Could ba an alias for a URL type instead, which does not exist yet.
+pub type PidProxy = String;
 
 #[derive(Debug)]
 pub enum Profile {
@@ -135,19 +162,7 @@ impl Default for ObjectLocation {
     }
 }
 
-impl Deref for ObjectLocation {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for ObjectLocation {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
+newtype_deref!(ObjectLocation, String);
 
 pub struct DateTimeHandle(DateTime<Utc>);
 
@@ -158,16 +173,4 @@ impl Default for DateTimeHandle {
     }
 }
 
-impl Deref for DateTimeHandle {
-    type Target = DateTime<Utc>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for DateTimeHandle {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
+newtype_deref!(DateTimeHandle, DateTime<Utc>);
