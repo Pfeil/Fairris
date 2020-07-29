@@ -169,3 +169,5 @@ impl DerefMut for DateTimeHandle {
         &mut self.0
     }
 }
+
+pub type Version = String;

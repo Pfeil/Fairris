@@ -23,7 +23,7 @@ pub struct CreateComponent {
     etag: Checksum,  // should work
     // TODO optional date_modified: String,
     date_created: DateTimeHandle,
-    version: String,
+    version: Version,
     // TODO many optional handles:
     //derived_from: Pid,
     //specialization_of: Pid,
@@ -141,10 +141,7 @@ impl Component for CreateComponent {
                     { self.policy.display_form(&self.link) }
                     { self.etag.display_form(&self.link) }
                     { self.date_created.display_form(&self.link) }
-                    <label class="form-description" for="fdo-version">{ "Object Version String:" }</label>
-                    <input class="form-input" type="text" id="fdo-version" required=true
-                        onchange=self.link.callback(|e: ChangeData| Msg::ChangeVersion(e))
-                    />
+                    { self.version.display_form(&self.link) }
 
                     {
                         match self.profile {
@@ -183,8 +180,8 @@ impl Component for CreateComponent {
                                 <p>{ "License:" }</p>
                                 <p>{ "TODO implement" }</p>
                                 </>
+                            }
                         }
-                    }
                     }
                 </div>
                 <button class="okbutton" onclick=self.link.callback(|_| Msg::SendForm)>{ "Create FDO Record" }</button>
@@ -377,4 +374,24 @@ impl RecordProperty for DateTimeHandle {
         )
     }
     
+}
+
+impl RecordProperty for Version {
+    fn set_into(&self, record: &mut PidRecord) {
+        let id = "21.T11148/c692273deb2772da307f".into();
+        let name = "version".into();
+        let value = json::Value::String( self.clone() );
+        record.add_attribute(id, name, value);
+    }
+
+    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
+        html!(
+            <>
+            <label class="form-description" for="fdo-version">{ "Object Version String:" }</label>
+            <input class="form-input" type="text" id="fdo-version" required=true
+                onchange=link.callback(|e: ChangeData| Msg::ChangeVersion(e))
+            />
+            </>
+        )
+    }
 }
