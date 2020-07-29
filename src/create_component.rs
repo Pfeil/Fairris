@@ -150,6 +150,9 @@ impl Component for CreateComponent {
                         match self.profile {
                             Profile::RecommendedKernelProfile => html! {
                                 <>
+                                <p>{ "Date modified:" }</p>
+                                <p>{ "TODO implement" }</p>
+
                                 <label class="form-description" for="fdo-metadata">{ "Metadata handle:" }</label>
                                 <input class="form-input" type="text" id="fdo-metadata" required=true />
 
@@ -172,8 +175,16 @@ impl Component for CreateComponent {
                                 <input class="form-input" type="text" id="alternate-of" required=true />
                                 </>
                             },
-                            Profile::HmcKernelProfile => html!{}
+                            Profile::HmcKernelProfile => html!{
+                                <>
+                                <p>{ "License:" }</p>
+                                <p>{ "TODO implement" }</p>
+
+                                <p>{ "License:" }</p>
+                                <p>{ "TODO implement" }</p>
+                                </>
                         }
+                    }
                     }
                 </div>
                 <button class="okbutton" onclick=self.link.callback(|_| Msg::SendForm)>{ "Create FDO Record" }</button>
@@ -226,7 +237,8 @@ impl RecordProperty for Profile {
         html! {
             <>
                 <label class="form-description" for="profile-select">{ "Profile:" }</label>
-                <select class="form-input" id="profile-select" onchange=link.callback(|e| Msg::ChangeProfile(e))>
+                <select class="form-input" id="profile-select" required=true
+                        onchange=link.callback(|e| Msg::ChangeProfile(e))>
                     <option>{ "Recommended Kernel Information Profile" }</option>
                     <option>{ "HMC Kernel Information Profile" }</option>
                 </select>
@@ -251,7 +263,8 @@ impl RecordProperty for DataType {
         html! {
             <>
                 <label class="form-description" for="fdo-type">{ "Digital Object Data Type:" }</label>
-                <select class="form-input" id="fdo-type" onchange=link.callback(|e: ChangeData| Msg::ChangeDataType(e))>
+                <select class="form-input" id="fdo-type" required=true
+                        onchange=link.callback(|e: ChangeData| Msg::ChangeDataType(e))>
                     <option>{ "image/TIFF (media-type-IANA-image)" }</option>
                     <option>{ "image/PNG  (media-type-IANA-image)" }</option>
                 </select>
@@ -315,7 +328,7 @@ impl RecordProperty for Checksum {
         record.add_attribute(id, name, value);
     }
 
-    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
+    fn display_form(&self, _link: &ComponentLink<CreateComponent>) -> Html {
         html! {
         <> // TODO calculate hash yourself? (download image and calculate)
             <label class="form-description" for="fdo-etag">{ "etag (object hash):" }</label>
@@ -355,7 +368,7 @@ impl RecordProperty for DateTimeHandle {
         record.add_attribute(id, name, value);
     }
 
-    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
+    fn display_form(&self, _link: &ComponentLink<CreateComponent>) -> Html {
         html!(
             <>
                 <label class="form-description" for="fdo-data-url">{ "creation date and time:" }</label>
