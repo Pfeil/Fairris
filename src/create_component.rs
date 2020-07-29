@@ -128,11 +128,14 @@ impl Component for CreateComponent {
         false
     }
     fn view(&self) -> Html {
-        log::debug!("View was called.");
+        log::debug!("View was called. Profile is {:?}", self.profile);
         html! {
             <div id="content" class="maincolumns scroll-vertical">
-                <div class="column-form">
+                <div class="two-column-lefty">
                     { self.profile.display_form(&self.link) }
+                    <p>{ "The following form is adjusted to this profile:" }</p>
+                    <p>{ format!("Profile is {:?}", self.profile) }</p>
+
                     { self.data_type.display_form(&self.link) }
                     { self.data_url.display_form(&self.link) }
                     { self.policy.display_form(&self.link) }
@@ -143,8 +146,6 @@ impl Component for CreateComponent {
                         onchange=self.link.callback(|e: ChangeData| Msg::ChangeVersion(e))
                     />
 
-                    <p>{ "Selected Profile is:" }</p>
-                    <p>{ format!("Profile is {:?}", self.profile) }</p>
                     {
                         match self.profile {
                             Profile::RecommendedKernelProfile => html! {
@@ -171,7 +172,7 @@ impl Component for CreateComponent {
                                 <input class="form-input" type="text" id="alternate-of" required=true />
                                 </>
                             },
-                            Profile::HmcKernelProfile => html!{<p>{"empty"}</p>}
+                            Profile::HmcKernelProfile => html!{}
                         }
                     }
                 </div>

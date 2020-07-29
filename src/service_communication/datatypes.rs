@@ -20,6 +20,7 @@ impl From<i32> for Profile {
     fn from(index: i32) -> Self {
         match index {
             0 => Self::RecommendedKernelProfile,
+            1 => Self::HmcKernelProfile,
             _ => Self::default(),
         }
     }
