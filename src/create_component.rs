@@ -70,7 +70,7 @@ impl Component for CreateComponent {
         }
     }
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        log::debug!("Form Received an update");
+        log::debug!("Form Received an update: {:?}", msg);
         match msg {
             Msg::ChangeProfile(ChangeData::Select(input /*stdweb::web::html_element::SelectElement*/)) => {
                 log::info!("Change form profile to: ({:?}){:?}", input.selected_index(), input.value());
@@ -128,58 +128,56 @@ impl Component for CreateComponent {
         false
     }
     fn view(&self) -> Html {
-        match self.profile {
-            Profile::AnnotatedImageProfile => html! {
-                <div id="content" class="maincolumns scroll-vertical">
-                    <div class="column-form">
-                        // profile selection
-                        { self.profile.display_form(&self.link) }
-                        // data type
-                        { self.data_type.display_form(&self.link) }
-                        // Data URL
-                        { self.data_url.display_form(&self.link) }
-                        // Policy
-                        { self.policy.display_form(&self.link) }
-                        // Checksum
-                        { self.etag.display_form(&self.link) }
+        log::debug!("View was called.");
+        html! {
+            <div id="content" class="maincolumns scroll-vertical">
+                <div class="column-form">
+                    { self.profile.display_form(&self.link) }
+                    { self.data_type.display_form(&self.link) }
+                    { self.data_url.display_form(&self.link) }
+                    { self.policy.display_form(&self.link) }
+                    { self.etag.display_form(&self.link) }
+                    { self.date_created.display_form(&self.link) }
+                    <label class="form-description" for="fdo-version">{ "Object Version String:" }</label>
+                    <input class="form-input" type="text" id="fdo-version" required=true
+                        onchange=self.link.callback(|e: ChangeData| Msg::ChangeVersion(e))
+                    />
 
-                        // creationDateTime
-                        { self.date_created.display_form(&self.link) }
-                        // version
-                        <label class="form-description" for="fdo-version">{ "Object Version String:" }</label>
-                        <input class="form-input" type="text" id="fdo-version" required=true
-                            onchange=self.link.callback(|e: ChangeData| Msg::ChangeVersion(e))
-                        />
-    
-                        <p>{ "The following input fields are there because of the PID Kernel Information Recommendations." }</p>
-                        <p>{ "They are temporarily ignored because they are not included in the HMC profile this demo uses." }</p>
-    
-                        <label class="form-description" for="fdo-metadata">{ "Metadata handle:" }</label>
-                        <input class="form-input" type="text" id="fdo-metadata" required=true />
-    
-                        <label class="form-description" for="derived-from">{ "Derived from (handles):" }</label>
-                        <input class="form-input" type="text" id="derived-from" required=true />
-    
-                        <label class="form-description" for="specialization-of">{ "Specialization of (handles):" }</label>
-                        <input class="form-input" type="text" id="specialization-of" required=true />
-    
-                        <label class="form-description" for="revision-of">{ "Revision of (handles):" }</label>
-                        <input class="form-input" type="text" id="revision-of" required=true />
-    
-                        <label class="form-description" for="primary-source">{ "Primary sources (handles):" }</label>
-                        <input class="form-input" type="text" id="primary-source" required=true />
-    
-                        <label class="form-description" for="quoted-from">{ "Quoted from (handles):" }</label>
-                        <input class="form-input" type="text" id="quoted-from" required=true />
-    
-                        <label class="form-description" for="alternate-of">{ "Alternative of (handles):" }</label>
-                        <input class="form-input" type="text" id="alternate-of" required=true />
-                    </div>
-                    <button class="okbutton" onclick=self.link.callback(|_| Msg::SendForm)>{ "Create FDO Record" }</button>
-    
+                    <p>{ "Selected Profile is:" }</p>
+                    <p>{ format!("Profile is {:?}", self.profile) }</p>
+                    {
+                        match self.profile {
+                            Profile::RecommendedKernelProfile => html! {
+                                <>
+                                <label class="form-description" for="fdo-metadata">{ "Metadata handle:" }</label>
+                                <input class="form-input" type="text" id="fdo-metadata" required=true />
+
+                                <label class="form-description" for="derived-from">{ "Derived from (handles):" }</label>
+                                <input class="form-input" type="text" id="derived-from" required=true />
+
+                                <label class="form-description" for="specialization-of">{ "Specialization of (handles):" }</label>
+                                <input class="form-input" type="text" id="specialization-of" required=true />
+
+                                <label class="form-description" for="revision-of">{ "Revision of (handles):" }</label>
+                                <input class="form-input" type="text" id="revision-of" required=true />
+
+                                <label class="form-description" for="primary-source">{ "Primary sources (handles):" }</label>
+                                <input class="form-input" type="text" id="primary-source" required=true />
+
+                                <label class="form-description" for="quoted-from">{ "Quoted from (handles):" }</label>
+                                <input class="form-input" type="text" id="quoted-from" required=true />
+
+                                <label class="form-description" for="alternate-of">{ "Alternative of (handles):" }</label>
+                                <input class="form-input" type="text" id="alternate-of" required=true />
+                                </>
+                            },
+                            Profile::HmcKernelProfile => html!{<p>{"empty"}</p>}
+                        }
+                    }
                 </div>
-            },
-            _ => html!{<div>{ "Not implemented yet." }</div>}
+                <button class="okbutton" onclick=self.link.callback(|_| Msg::SendForm)>{ "Create FDO Record" }</button>
+
+            </div>
         }
     }
 }
@@ -187,12 +185,18 @@ impl Component for CreateComponent {
 impl CreateComponent {
     fn extract_record(&self) -> serde_json::Value {
         let mut record = PidRecord::default();
+        // set all properties common to all supported profiles
         self.profile.set_into(&mut record);
         self.data_type.set_into(&mut record);
         self.data_url.set_into(&mut record);
         self.policy.set_into(&mut record);
         self.etag.set_into(&mut record);
         self.date_created.set_into(&mut record);
+        // set special properties
+        match self.profile {
+            Profile::RecommendedKernelProfile => {}
+            Profile::HmcKernelProfile => {}
+        }
         serde_json::to_value(record).unwrap()
     }
 }
@@ -210,22 +214,20 @@ impl RecordProperty for Profile {
     fn set_into(&self, record: &mut PidRecord) {
         let id = "21.T11148/076759916209e5d62bd5".into();
         let name = "KernelInformationProfile".into();
-        let recommended_profile = "21.T11148/0c5636e4d82b88f86132".into();
-        match self {
-            Profile::AnnotatedImageProfile => record.add_attribute(id, name, recommended_profile),
-            Profile::OtherProfile => {}
+        let profile = match self {
+            Profile::RecommendedKernelProfile => "21.T11148/0c5636e4d82b88f86132".into(),
+            Profile::HmcKernelProfile => "21.T11148/b9b76f887845e32d29f7".into(),
         };
+        record.add_attribute(id, name, profile);
     }
 
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
         html! {
             <>
                 <label class="form-description" for="profile-select">{ "Profile:" }</label>
-                <select class="form-input" id="profile-select"
-                        onchange=link.callback(|e: ChangeData| Msg::ChangeProfile(e))>
-                    <option>{ "Annotated Images (Pair(s) of Image file + PageAnnotation)" }</option>
-                    <option>{ "Other profile (manual)" }</option>
-                    //<option>{ "Metadata Document" }</option>
+                <select class="form-input" id="profile-select" onchange=link.callback(|e| Msg::ChangeProfile(e))>
+                    <option>{ "Recommended Kernel Information Profile" }</option>
+                    <option>{ "HMC Kernel Information Profile" }</option>
                 </select>
             </>
         }
@@ -236,12 +238,12 @@ impl RecordProperty for DataType {
     fn set_into(&self, record: &mut PidRecord) {
         let id = "21.T11148/1c699a5d1b4ad3ba4956".into();
         let name = "digitalObjectType".into();
-        let image = "21.T11148/2834eac0159f584bcf05".into();
-        // TODO how to set the image type png/tiff?
-        match self {
-            DataType::Tiff => record.add_attribute(id, name, image),
-            DataType::Png  => record.add_attribute(id, name, image),
+        let image_type = match self {
+            DataType::Tiff => "21.T11148/2834eac0159f584bcf05".into(),
+            DataType::Png =>  "21.T11148/2834eac0159f584bcf05".into(),
         };
+        // TODO how to set the image type png/tiff? Currently the PID just says "iana image"
+        record.add_attribute(id, name, image_type);
     }
 
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
@@ -262,11 +264,19 @@ impl RecordProperty for Policy {
         // 1. create value
         let id: String = "21.T11148/8074aed799118ac263ad".into();
         let name: String = "digitalObjectPolicy".into();
-        // TODO implement real pid to fitting object
-        let value = json::Value::String(format!("policy/default"));
-        // 2. set into record
-        record.add_attribute(id, name, value);
-        // TODO record.add_attribute(...);
+        // TODO choose pid to policy by given lifecycle and license.
+        let policy_pid = match (&self.lifecycle, &self.license) {
+            (Lifecycle::Static, License::MIT) => "policy/default".into(),
+            (Lifecycle::Static, License::Apache) => "policy/default".into(),
+            (Lifecycle::Static, License::CcBy) => "policy/default".into(),
+            (Lifecycle::RegularUpdates, License::MIT) => "policy/default".into(),
+            (Lifecycle::RegularUpdates, License::Apache) => "policy/default".into(),
+            (Lifecycle::RegularUpdates, License::CcBy) => "policy/default".into(),
+            (Lifecycle::IrregularUpdates, License::MIT) => "policy/default".into(),
+            (Lifecycle::IrregularUpdates, License::Apache) => "policy/default".into(),
+            (Lifecycle::IrregularUpdates, License::CcBy) => "policy/default".into(),
+        };
+        record.add_attribute(id, name, policy_pid);
     }
 
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
@@ -297,7 +307,6 @@ impl RecordProperty for Checksum {
     fn set_into(&self, record: &mut PidRecord) {
         let id = "21.T11148/92e200311a56800b3e47".into();
         let name = "etag".into();
-        //let value = json::Value::String(format!("{}", self.value));
         let value = json::json!({
             "sha256sum": json::Value::String(format!("sha256: {}", self.value))
         });
@@ -306,16 +315,10 @@ impl RecordProperty for Checksum {
     }
 
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
-        // TODO just a dummy.
         html! {
         <> // TODO calculate hash yourself? (download image and calculate)
             <label class="form-description" for="fdo-etag">{ "etag (object hash):" }</label>
-            <select class="form-input" id="fdo-etag"
-                    onchange=link.callback(|e: ChangeData| Msg::ChangeLicense(e))>
-                <option>{ "Calculate from Location Body" }</option>
-                <option>{ "Provide manually (TODO create-text-unput on selection)" }</option>
-                <option>{ "What if the location is a stream?" }</option>
-            </select>
+            <p>{ "In real world examples, the application would calculate the checksum automatically. Currently, a default is used." }</p>
         </>
         }
     }
@@ -355,7 +358,7 @@ impl RecordProperty for DateTimeHandle {
         html!(
             <>
                 <label class="form-description" for="fdo-data-url">{ "creation date and time:" }</label>
-                <p>{ "TODO (date time chooser or free text field)" }</p>
+                <p>{ "For testing purposes and to ease demonstration, the point of time that this page was loaded is chosen to be the creation time." }</p>
             </>
         )
     }

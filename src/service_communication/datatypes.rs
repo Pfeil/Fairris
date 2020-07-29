@@ -4,21 +4,22 @@ use std::ops::{Deref, DerefMut};
 
 pub type Pid = String;
 
+#[derive(Debug)]
 pub enum Profile {
-    AnnotatedImageProfile,
-    OtherProfile,
+    RecommendedKernelProfile,
+    HmcKernelProfile,
 }
 
 impl Default for Profile {
     fn default() -> Self {
-        Self::AnnotatedImageProfile
+        Self::RecommendedKernelProfile
     }
 }
 
 impl From<i32> for Profile {
     fn from(index: i32) -> Self {
         match index {
-            0 => Self::AnnotatedImageProfile,
+            0 => Self::RecommendedKernelProfile,
             _ => Self::default(),
         }
     }
