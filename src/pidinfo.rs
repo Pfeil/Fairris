@@ -11,7 +11,7 @@ pub struct PidInfo {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-enum State {
+pub enum State {
     Unregistered,
     Modified,
     Clean,
@@ -28,10 +28,23 @@ impl Default for PidInfo {
 
 impl PidInfo {
     pub fn from_registered(record: PidRecord) -> Self {
-        Self {
-            record,
-            state: State::Clean,
-        }
+        Self::from(record, State::Clean)
+    }
+
+    pub fn from_unregistered(record: PidRecord) -> Self {
+        Self::from(record, State::Unregistered)
+    }
+
+    pub fn from_modified(record: PidRecord) -> Self {
+        Self::from(record, State::Modified)
+    }
+
+    fn from(record: PidRecord, state: State) -> Self {
+        Self { record, state }
+    }
+
+    pub fn state_mut(&mut self) -> &mut State {
+        &mut self.state
     }
 
     pub fn pid(&self) -> &String {
