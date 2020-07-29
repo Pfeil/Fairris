@@ -124,6 +124,8 @@ impl Default for Checksum {
     }
 }
 
+/// Represents a URL.
+/// TODO Change name to URL or something similar.
 pub struct ObjectLocation(String);
 
 impl Default for ObjectLocation {
@@ -169,5 +171,3 @@ impl DerefMut for DateTimeHandle {
         &mut self.0
     }
 }
-
-pub type Version = String;

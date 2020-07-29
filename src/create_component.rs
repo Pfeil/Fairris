@@ -1,30 +1,34 @@
 use super::Model;
 use super::service_communication::{
+    RecordEntry,
     pit_record::PidRecord,
-    datatypes::*,
+    primitive_types::*,  // TODO make newtypes around primitives so they are reusable and this import is not needed anymore.
+    types::*,
 };
 
 use yew::prelude::*;
 use yew::services::{fetch::{FetchService, Request, Response, FetchTask}};
 use yew::format::Json;
 use anyhow::Error;
-use serde_json as json;
 use crate::pidinfo::PidInfo;
 
 pub struct CreateComponent {
     link: ComponentLink<Self>,
     props: Props,
     task: Option<FetchTask>,
-
-    profile: Profile,  // should work
-    data_type: DataType,  // should work
-    data_url: ObjectLocation, // should work
-    policy: Policy,  // should work
-    etag: Checksum,  // should work
-    // TODO optional date_modified: String,
-    date_created: DateTimeHandle,
+    // common (mandatory)
+    profile: Profile,
+    data_type: DataType,
+    data_url: ObjectLocation,
+    policy: Policy,
+    etag: Checksum,
+    date_created: DateCreated,
+    // HMC profile (mandatory)
+    date_modified: DateModified,
+    // metadata_document: MetadataDocument,
+    // common (optional)
     version: Version,
-    // TODO many optional handles:
+    // Recommended profile (optional)
     //derived_from: Pid,
     //specialization_of: Pid,
     //revision_of: Pid,
@@ -65,7 +69,8 @@ impl Component for CreateComponent {
             data_url: ObjectLocation::default(),
             policy: Policy::default(),
             etag: Checksum::default(),
-            date_created: DateTimeHandle::default(),
+            date_created: DateCreated::default(),
+            date_modified: DateModified::default(),
             version: String::new(),
         }
     }
@@ -147,8 +152,7 @@ impl Component for CreateComponent {
                         match self.profile {
                             Profile::RecommendedKernelProfile => html! {
                                 <>
-                                <p>{ "Date modified:" }</p>
-                                <p>{ "TODO implement" }</p>
+                                { self.date_modified.display_form(&self.link) }
 
                                 <label class="form-description" for="fdo-metadata">{ "Metadata handle:" }</label>
                                 <input class="form-input" type="text" id="fdo-metadata" required=true />
@@ -174,7 +178,7 @@ impl Component for CreateComponent {
                             },
                             Profile::HmcKernelProfile => html!{
                                 <>
-                                <p>{ "License:" }</p>
+                                <p>{ "Metadata PID:" }</p>
                                 <p>{ "TODO implement" }</p>
 
                                 <p>{ "License:" }</p>
@@ -195,41 +199,33 @@ impl CreateComponent {
     fn extract_record(&self) -> serde_json::Value {
         let mut record = PidRecord::default();
         // set all properties common to all supported profiles
-        self.profile.set_into(&mut record);
-        self.data_type.set_into(&mut record);
-        self.data_url.set_into(&mut record);
-        self.policy.set_into(&mut record);
-        self.etag.set_into(&mut record);
-        self.date_created.set_into(&mut record);
+        self.profile.write(&mut record);
+        self.data_type.write(&mut record);
+        self.data_url.write(&mut record);
+        self.policy.write(&mut record);
+        self.etag.write(&mut record);
+        self.date_created.write(&mut record);
         // set special properties
         match self.profile {
             Profile::RecommendedKernelProfile => {}
             Profile::HmcKernelProfile => {}
         }
+        // common optionals
+        self.date_modified.write(&mut record);
+        self.version.write(&mut record);
+
         serde_json::to_value(record).unwrap()
     }
 }
 
-/// Types which implement this trait can be used to represent types of the data type repository,
-/// as they can set themselves into a given PidRecord.
-/// They can also display proper html Controls to control them.
-trait RecordProperty {
-    // TODO better name, like write_into or so.
-    fn set_into(&self, record: &mut PidRecord);
+// TODO move all newtypes and "Recordable" implementations into crate::service_communication::types
+
+trait FormElement: RecordEntry {
+    /// Returns Html that can be used within components.
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html;
 }
 
-impl RecordProperty for Profile {
-    fn set_into(&self, record: &mut PidRecord) {
-        let id = "21.T11148/076759916209e5d62bd5".into();
-        let name = "KernelInformationProfile".into();
-        let profile = match self {
-            Profile::RecommendedKernelProfile => "21.T11148/0c5636e4d82b88f86132".into(),
-            Profile::HmcKernelProfile => "21.T11148/b9b76f887845e32d29f7".into(),
-        };
-        record.add_attribute(id, name, profile);
-    }
-
+impl FormElement for Profile {
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
         html! {
             <>
@@ -244,18 +240,7 @@ impl RecordProperty for Profile {
     }
 }
 
-impl RecordProperty for DataType {
-    fn set_into(&self, record: &mut PidRecord) {
-        let id = "21.T11148/1c699a5d1b4ad3ba4956".into();
-        let name = "digitalObjectType".into();
-        let image_type = match self {
-            DataType::Tiff => "21.T11148/2834eac0159f584bcf05".into(),
-            DataType::Png =>  "21.T11148/2834eac0159f584bcf05".into(),
-        };
-        // TODO how to set the image type png/tiff? Currently the PID just says "iana image"
-        record.add_attribute(id, name, image_type);
-    }
-
+impl FormElement for DataType {
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
         html! {
             <>
@@ -270,26 +255,7 @@ impl RecordProperty for DataType {
     }
 }
 
-impl RecordProperty for Policy {
-    fn set_into(&self, record: &mut PidRecord) {
-        // 1. create value
-        let id: String = "21.T11148/8074aed799118ac263ad".into();
-        let name: String = "digitalObjectPolicy".into();
-        // TODO choose pid to policy by given lifecycle and license.
-        let policy_pid = match (&self.lifecycle, &self.license) {
-            (Lifecycle::Static, License::MIT) => "policy/default".into(),
-            (Lifecycle::Static, License::Apache) => "policy/default".into(),
-            (Lifecycle::Static, License::CcBy) => "policy/default".into(),
-            (Lifecycle::RegularUpdates, License::MIT) => "policy/default".into(),
-            (Lifecycle::RegularUpdates, License::Apache) => "policy/default".into(),
-            (Lifecycle::RegularUpdates, License::CcBy) => "policy/default".into(),
-            (Lifecycle::IrregularUpdates, License::MIT) => "policy/default".into(),
-            (Lifecycle::IrregularUpdates, License::Apache) => "policy/default".into(),
-            (Lifecycle::IrregularUpdates, License::CcBy) => "policy/default".into(),
-        };
-        record.add_attribute(id, name, policy_pid);
-    }
-
+impl FormElement for Policy {
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
         html! {
             <>  // Lifecycle
@@ -314,17 +280,7 @@ impl RecordProperty for Policy {
     }
 }
 
-impl RecordProperty for Checksum {
-    fn set_into(&self, record: &mut PidRecord) {
-        let id = "21.T11148/92e200311a56800b3e47".into();
-        let name = "etag".into();
-        let value = json::json!({
-            "sha256sum": json::Value::String(format!("sha256: {}", self.value))
-        });
-        let value = json::Value::String(value.to_string());  // PIT service only parses json strings as values
-        record.add_attribute(id, name, value);
-    }
-
+impl FormElement for Checksum {
     fn display_form(&self, _link: &ComponentLink<CreateComponent>) -> Html {
         html! {
         <> // TODO calculate hash yourself? (download image and calculate)
@@ -333,17 +289,9 @@ impl RecordProperty for Checksum {
         </>
         }
     }
-    
 }
 
-impl RecordProperty for ObjectLocation {
-    fn set_into(&self, record: &mut PidRecord) {
-        let id = "21.T11148/b8457812905b83046284".into();
-        let name = "digitalObjectLocation".into();
-        let value = json::Value::String((*self).clone());
-        record.add_attribute(id, name, value);
-    }
-
+impl FormElement for ObjectLocation {
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
         html!(
             <>
@@ -354,36 +302,31 @@ impl RecordProperty for ObjectLocation {
             </>
         )
     }
-    
 }
 
-impl RecordProperty for DateTimeHandle {
-    fn set_into(&self, record: &mut PidRecord) {
-        let id = "21.T11148/29f92bd203dd3eaa5a1f".into();
-        let name = "dateCreated".into();
-        let value = json::Value::String( format!("{}", self.format("%F %T")) );
-        record.add_attribute(id, name, value);
-    }
-
+impl FormElement for DateCreated {
     fn display_form(&self, _link: &ComponentLink<CreateComponent>) -> Html {
         html!(
             <>
-                <label class="form-description" for="fdo-data-url">{ "creation date and time:" }</label>
+                <label class="form-description">{ "creation date and time:" }</label>
                 <p>{ "For testing purposes and to ease demonstration, the point of time that this page was loaded is chosen to be the creation time." }</p>
             </>
         )
     }
-    
 }
 
-impl RecordProperty for Version {
-    fn set_into(&self, record: &mut PidRecord) {
-        let id = "21.T11148/c692273deb2772da307f".into();
-        let name = "version".into();
-        let value = json::Value::String( self.clone() );
-        record.add_attribute(id, name, value);
+impl FormElement for DateModified {
+    fn display_form(&self, _link: &ComponentLink<CreateComponent>) -> Html {
+        html!(
+            <>
+                <label class="form-description">{ "Modification date and time:" }</label>
+                <p>{ "For testing purposes and to ease demonstration, the point of time that this page was loaded is chosen to be the modification time." }</p>
+            </>
+        )
     }
+}
 
+impl FormElement for Version {
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
         html!(
             <>

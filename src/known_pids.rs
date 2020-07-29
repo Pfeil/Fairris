@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 
 use super::PidInfo;
-use crate::service_communication::datatypes::Pid;
+use crate::service_communication::primitive_types::Pid;
 
 #[derive(Default)]
 pub struct KnownPids {

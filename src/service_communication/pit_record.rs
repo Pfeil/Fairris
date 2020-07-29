@@ -1,6 +1,6 @@
 //! This module contains a serializable record definition
 //! that is used by the PIT service.
-use super::datatypes::Pid;
+use super::primitive_types::Pid;
 use ::std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use serde_json as json;
@@ -12,16 +12,6 @@ pub struct PidRecordEntry {
     pub value: json::Value,
 }
 
-impl PidRecordEntry {
-    fn from(key: String, value: json::Value) -> Self {
-        PidRecordEntry {
-            key: key.clone(),
-            name: key,
-            value,
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct PidRecord {
     #[serde(skip_serializing_if = "String::is_empty")]
@@ -30,16 +20,6 @@ pub struct PidRecord {
 }
 
 impl PidRecord {
-    fn extract_attribute(&mut self, attribute: &str) -> json::Value {
-        self.entries
-            .remove(attribute)
-            .and_then(|mut vec| vec.pop().and_then(|entry| Some(entry.value)))
-            .unwrap_or(json::Value::String(format!(
-                "Value to attribute \"{}\" not found.",
-                attribute
-            )))
-    }
-
     pub fn add_attribute(&mut self, id: String, name: String, value: json::Value) {
         let entry = PidRecordEntry {
             key: id.clone(),
