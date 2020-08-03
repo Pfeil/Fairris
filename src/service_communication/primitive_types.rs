@@ -33,23 +33,21 @@ pub type PidProxy = String;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Profile {
-    RecommendedKernelProfile,
-    HmcKernelProfile,
-    AnnotatedImageWithHmcProfile,
+    Testbed4infSimplified,
+    Testbed4infRaw,
 }
 
 impl Default for Profile {
     fn default() -> Self {
-        Self::RecommendedKernelProfile
+        Self::Testbed4infSimplified
     }
 }
 
 impl From<i32> for Profile {
     fn from(index: i32) -> Self {
         match index {
-            0 => Self::RecommendedKernelProfile,
-            1 => Self::HmcKernelProfile,
-            2 => Self::AnnotatedImageWithHmcProfile,
+            0 => Self::Testbed4infSimplified,
+            1 => Self::Testbed4infRaw,
             unknown => {
                 log::error!("Profile index '{}' not implemented.", unknown);
                 Self::default()

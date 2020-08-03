@@ -17,25 +17,19 @@ pub struct CreateComponent {
     props: Props,
     task: Option<FetchTask>,
     
-    // common (mandatory)
     profile: Profile,
     data_type: DataType,
     data_url: ObjectLocation,
     policy: Policy,
     etag: Checksum,
     date_created: DateCreated,
-    
-    // HMC profile (mandatory)
     date_modified: DateModified,
     metadata_document: MetadataDocument,
     license_string: LicenseString,
     
-    // future own profile
     metadata_document_pid: MetadataDocumentPid,
-    // TODO signature: Signature
-
-    // common (optional)
     version: Version,
+    contributors: Contributors,
 
     // Recommended profile (optional)
     //derived_from: Pid,
@@ -92,13 +86,13 @@ impl Component for CreateComponent {
             policy: Policy::default(),
             etag: Checksum::default(),
             date_created: DateCreated::default(),
+            date_modified: DateModified::default(),
             version: Version::default(),
 
             metadata_document: MetadataDocument::default(),
             metadata_document_pid: MetadataDocumentPid::default(),
             license_string: LicenseString::default(),
-
-            date_modified: DateModified::default(),
+            contributors: Contributors::default(),
         }
     }
 
@@ -166,56 +160,33 @@ impl Component for CreateComponent {
                 <p>{ format!("Adjust the profile to get a form fitting your FDO. Current Profile is {:?}", self.profile) }</p>
                 <div class="two-column-lefty">
                     { self.profile.display_form(&self.link) }
+                    { self.data_type.display_form(&self.link) }
                     { self.data_url.display_form(&self.link) }
+                    { self.metadata_document.display_form(&self.link) }
                     { self.policy.display_form(&self.link) }
                     { self.etag.display_form(&self.link) }
                     { self.date_created.display_form(&self.link) }
+                    { self.date_modified.display_form(&self.link) }
                     { self.version.display_form(&self.link) }
-                    
-                    {
-                        if self.profile == Profile::HmcKernelProfile || self.profile == Profile::RecommendedKernelProfile {
-                            { self.data_type.display_form(&self.link) }
-                        } else { html!{} }
-                    }
+                    { self.contributors.display_form(&self.link) }
 
-                    {
-                        match self.profile {
-                            Profile::RecommendedKernelProfile => html! {
-                                <>
-                                { self.date_modified.display_form(&self.link) }
+                    <label class="form-description" for="derived-from">{ "Derived from (handles):" }</label>
+                    <input class="form-input" type="text" id="derived-from" required=true />
 
-                                <label class="form-description" for="derived-from">{ "Derived from (handles):" }</label>
-                                <input class="form-input" type="text" id="derived-from" required=true />
+                    <label class="form-description" for="specialization-of">{ "Specialization of (handles):" }</label>
+                    <input class="form-input" type="text" id="specialization-of" required=true />
 
-                                <label class="form-description" for="specialization-of">{ "Specialization of (handles):" }</label>
-                                <input class="form-input" type="text" id="specialization-of" required=true />
+                    <label class="form-description" for="revision-of">{ "Revision of (handles):" }</label>
+                    <input class="form-input" type="text" id="revision-of" required=true />
 
-                                <label class="form-description" for="revision-of">{ "Revision of (handles):" }</label>
-                                <input class="form-input" type="text" id="revision-of" required=true />
+                    <label class="form-description" for="primary-source">{ "Primary sources (handles):" }</label>
+                    <input class="form-input" type="text" id="primary-source" required=true />
 
-                                <label class="form-description" for="primary-source">{ "Primary sources (handles):" }</label>
-                                <input class="form-input" type="text" id="primary-source" required=true />
+                    <label class="form-description" for="quoted-from">{ "Quoted from (handles):" }</label>
+                    <input class="form-input" type="text" id="quoted-from" required=true />
 
-                                <label class="form-description" for="quoted-from">{ "Quoted from (handles):" }</label>
-                                <input class="form-input" type="text" id="quoted-from" required=true />
-
-                                <label class="form-description" for="alternate-of">{ "Alternative of (handles):" }</label>
-                                <input class="form-input" type="text" id="alternate-of" required=true />
-                                </>
-                            },
-                            Profile::HmcKernelProfile => html!{
-                                <>
-                                { self.metadata_document.display_form(&self.link) }
-                                { self.license_string.display_form(&self.link) }
-                                </>
-                            },
-                            Profile::AnnotatedImageWithHmcProfile => html! {
-                                <>
-                                { self.metadata_document.display_form(&self.link) }
-                                </>
-                            }
-                        }
-                    }
+                    <label class="form-description" for="alternate-of">{ "Alternative of (handles):" }</label>
+                    <input class="form-input" type="text" id="alternate-of" required=true />
                 </div>
                 <button class="okbutton" onclick=self.link.callback(|_| Msg::SendForm)>{ "Create FDO Record" }</button>
 
@@ -227,27 +198,16 @@ impl Component for CreateComponent {
 impl CreateComponent {
     fn extract_record(&self) -> serde_json::Value {
         let mut record = PidRecord::default();
-        // set all properties common to all supported profiles
         self.profile.write(&mut record);
+        self.data_type.write(&mut record);
         self.data_url.write(&mut record);
+        self.metadata_document.write(&mut record);
         self.policy.write(&mut record);
         self.etag.write(&mut record);
         self.date_created.write(&mut record);
-        // set special properties
-        if self.profile == Profile::HmcKernelProfile || self.profile == Profile::RecommendedKernelProfile {
-            self.data_type.write(&mut record);
-        }
-        match self.profile {
-            Profile::RecommendedKernelProfile => {}
-            Profile::HmcKernelProfile => {
-                self.metadata_document.write(&mut record);
-                self.license_string.write(&mut record);
-            },
-            Profile::AnnotatedImageWithHmcProfile => self.metadata_document.write(&mut record),
-        }
-        // common optionals
         self.date_modified.write(&mut record);
         self.version.write(&mut record);
+        // TODO self.contributors.write(&mut record);
 
         serde_json::to_value(record).unwrap()
     }
@@ -267,9 +227,8 @@ impl FormElement for Profile {
                 <label class="form-description" for="profile-select">{ "Profile:" }</label>
                 <select class="form-input" id="profile-select" required=true
                         onchange=link.callback(|e| Msg::ChangeProfile(e))>
-                    <option>{ "Recommended Kernel Information Profile" }</option>
-                    <option>{ "HMC Kernel Information Profile" }</option>
-                    <option>{ "Annotated Image Template (HMC Kernel Information Profile)" }</option>
+                    <option>{ "Simplified Form" }</option>
+                    <option>{ "Raw Profile Form" }</option>
                 </select>
             </>
         }
@@ -417,6 +376,17 @@ impl FormElement for LicenseString {
             <input class="form-input" type="text" id="fdo-license" required=true
                 onchange=link.callback(|e: ChangeData| Msg::ChangeLicenseString(e))
             />
+            </>
+        }
+    }
+}
+
+impl FormElement for Contributors {
+    fn display_form(&self, _link: &ComponentLink<CreateComponent>) -> Html {
+        html! {
+            <>
+            <p>{ "Contributors:" }</p>
+            <p>{ "Placeholder contributers will be inserted for demonstration." }</p>
             </>
         }
     }

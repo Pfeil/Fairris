@@ -1,4 +1,5 @@
 use serde_json as json;
+use serde::{Serialize, Deserialize};
 
 use super::pit_record::PidRecord;
 use super::primitive_types as primitive;
@@ -9,11 +10,10 @@ impl RecordEntry for primitive::Profile {
     fn write(&self, record: &mut PidRecord) {
         use primitive::Profile;
         let id = "21.T11148/076759916209e5d62bd5".into();
-        let name = "KernelInformationProfile".into();
+        let name = "profilePid".into();
         let profile = match self {
-            Profile::RecommendedKernelProfile => "21.T11148/0c5636e4d82b88f86132".into(),
-            Profile::HmcKernelProfile | Profile::AnnotatedImageWithHmcProfile => {
-                "21.T11148/b9b76f887845e32d29f7".into()
+            Profile::Testbed4infSimplified | Profile::Testbed4infRaw => {
+                "21.T11148/61fd3446879407065218".into()
             }
         };
         record.add_attribute(id, name, profile);
@@ -23,7 +23,7 @@ impl RecordEntry for primitive::Profile {
 impl RecordEntry for primitive::DataType {
     fn write(&self, record: &mut PidRecord) {
         use primitive::DataType;
-        let id = "21.T11148/1c699a5d1b4ad3ba4956".into();
+        let id = "21.T11148/c83481d4bf467110e7c9".into();
         let name = "digitalObjectType".into();
         let image_type = match self {
             DataType::Tiff => "21.T11148/2834eac0159f584bcf05".into(),
@@ -83,9 +83,9 @@ pub struct DateCreated(primitive::DateTimeHandle);
 
 impl RecordEntry for DateCreated {
     fn write(&self, record: &mut PidRecord) {
-        let id = "21.T11148/29f92bd203dd3eaa5a1f".into();
-        let name = "dateCreated".into();
-        let value = json::Value::String(format!("{}", self.0.format("%F %T")));
+        let id = "21.T11148/aafd5fb4c7222e2d950a".into();
+        let name = "dateCreatedRfc3339".into();
+        let value = json::Value::String(format!("{}", self.0.to_rfc3339()));
         record.add_attribute(id, name, value);
     }
 }
@@ -96,7 +96,7 @@ pub struct DateModified(primitive::DateTimeHandle);
 impl RecordEntry for DateModified {
     fn write(&self, record: &mut PidRecord) {
         let id = "21.T11148/397d831aa3a9d18eb52c".into();
-        let name = "dateModified".into();
+        let name = "dateModifiedRfc3339".into();
         let value = json::Value::String(format!("{}", self.0.to_rfc3339()));
         record.add_attribute(id, name, value);
     }
@@ -143,7 +143,6 @@ impl RecordEntry for MetadataDocument {
     fn write(&self, record: &mut PidRecord) {
         let id = "21.T11148/e0efd6b4c8e71c6d077b".into();
         let name = "metadataDocument".into();
-        // json::json!({ "sha256sum": json::Value::String(format!("sha256: {}", self.value)) })
         let value = json::json!({
             "metadataScheme": self.scheme,
             "@id": self.pid,
@@ -167,3 +166,39 @@ impl RecordEntry for LicenseString {
 }
 
 newtype_deref!(LicenseString, String);
+
+#[derive(Serialize, Deserialize)]
+pub struct Contributor {
+    #[serde(rename = "21.T11148/3626040cadcac1571685")]
+    pub identifier: primitive::Pid,
+    #[serde(rename = "21.T11148/31cf58fed6ddd1b96102")]
+    pub role: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Contributors(Vec<Contributor>);
+
+newtype_deref!(Contributors, Vec<Contributor>);
+
+impl RecordEntry for Contributors {
+    fn write(&self, record: &mut PidRecord) {
+        let id = "21.T11148/6534eca5d640dc878d87".into();
+        let name = "contributors".into();
+        let value = json::Value::String(json::to_string(self).unwrap());
+        record.add_attribute(id, name, value);
+    }
+}
+
+impl Default for Contributors {
+    fn default() -> Self {
+        let author = Contributor {
+            identifier: "kitdm/author123".into(),
+            role: "author".into(),
+        };
+        let institute = Contributor {
+            identifier: "kitdm/institute123".into(),
+            role: "institute".into(),
+        };
+        Contributors(vec![author, institute])
+    }
+}
