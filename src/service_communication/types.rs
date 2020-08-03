@@ -12,7 +12,9 @@ impl RecordEntry for primitive::Profile {
         let name = "KernelInformationProfile".into();
         let profile = match self {
             Profile::RecommendedKernelProfile => "21.T11148/0c5636e4d82b88f86132".into(),
-            Profile::HmcKernelProfile => "21.T11148/b9b76f887845e32d29f7".into(),
+            Profile::HmcKernelProfile | Profile::AnnotatedImageWithHmcProfile => {
+                "21.T11148/b9b76f887845e32d29f7".into()
+            }
         };
         record.add_attribute(id, name, profile);
     }

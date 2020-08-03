@@ -31,10 +31,11 @@ pub type Pid = String;
 // TODO Could ba an alias for a URL type instead, which does not exist yet.
 pub type PidProxy = String;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Profile {
     RecommendedKernelProfile,
     HmcKernelProfile,
+    AnnotatedImageWithHmcProfile,
 }
 
 impl Default for Profile {
@@ -48,7 +49,11 @@ impl From<i32> for Profile {
         match index {
             0 => Self::RecommendedKernelProfile,
             1 => Self::HmcKernelProfile,
-            _ => Self::default(),
+            2 => Self::AnnotatedImageWithHmcProfile,
+            unknown => {
+                log::error!("Profile index '{}' not implemented.", unknown);
+                Self::default()
+            },
         }
     }
 }
@@ -99,7 +104,10 @@ impl From<i32> for Lifecycle {
             0 => Self::Static,
             1 => Self::RegularUpdates,
             2 => Self::IrregularUpdates,
-            _ => Self::default(),
+            unknown => {
+                log::error!("Lifecycle index '{}' not implemented.", unknown);
+                Self::default()
+            },
         }
     }
 }
