@@ -20,14 +20,40 @@ impl RecordEntry for primitive::Profile {
     }
 }
 
-impl RecordEntry for primitive::DataType {
+pub enum DataType {
+    Tiff,
+    Png,
+    Pid(primitive::Pid),
+}
+
+impl Default for DataType {
+    fn default() -> Self {
+        Self::Tiff
+    }
+}
+
+impl From<i32> for DataType {
+    fn from(index: i32) -> Self {
+        match index {
+            0 => Self::Tiff,
+            1 => Self::Png,
+            2 => Self::Pid(String::new()),
+            unknown => {
+                log::error!("Profile index '{}' not implemented.", unknown);
+                Self::default()
+            }
+        }
+    }
+}
+
+impl RecordEntry for DataType {
     fn write(&self, record: &mut PidRecord) {
-        use primitive::DataType;
         let id = "21.T11148/c83481d4bf467110e7c9".into();
         let name = "digitalObjectType".into();
         let image_type = match self {
-            DataType::Tiff => "21.T11148/2834eac0159f584bcf05".into(),
-            DataType::Png => "21.T11148/2834eac0159f584bcf05".into(),
+            DataType::Tiff => "tiff".into(),
+            DataType::Png => "png".into(),
+            DataType::Pid(pid) => json::Value::String(pid.into()),
         };
         // TODO how to set the image type png/tiff? Currently the PID just says "iana image"
         record.add_attribute(id, name, image_type);

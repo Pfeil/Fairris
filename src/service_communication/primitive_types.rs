@@ -56,27 +56,6 @@ impl From<i32> for Profile {
     }
 }
 
-pub enum DataType {
-    Tiff,
-    Png,
-}
-
-impl Default for DataType {
-    fn default() -> Self {
-        Self::Tiff
-    }
-}
-
-impl From<i32> for DataType {
-    fn from(index: i32) -> Self {
-        match index {
-            0 => Self::Tiff,
-            1 => Self::Png,
-            _ => Self::default(),
-        }
-    }
-}
-
 #[derive(Default)]
 pub struct Policy {
     pub lifecycle: Lifecycle,

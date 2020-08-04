@@ -107,6 +107,7 @@ impl Component for CreateComponent {
                 log::info!("Change data type to: ({:?}){:?}", input.selected_index(), input.value());
                 self.data_type = DataType::from(input.selected_index());
             }
+            Msg::ChangeDataType(ChangeData::Value(pid)) => self.data_type = DataType::Pid(pid),
             Msg::ChangeDataURL(ChangeData::Value(url)) => *self.data_url = url,
             Msg::ChangeLifecycle(ChangeData::Select(input)) => {
                 log::info!("Change lifecycle to: ({:?}){:?}", input.selected_index(), input.value());
@@ -237,14 +238,21 @@ impl FormElement for Profile {
 
 impl FormElement for DataType {
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
+        let disabled_value: bool = if let Self::Pid(_) = self {false} else {true};
         html! {
             <>
                 <label class="form-description" for="fdo-type">{ "Digital Object Data Type:" }</label>
-                <select class="form-input" id="fdo-type" required=true
-                        onchange=link.callback(|e: ChangeData| Msg::ChangeDataType(e))>
-                    <option>{ "image/TIFF (media-type-IANA-image)" }</option>
-                    <option>{ "image/PNG  (media-type-IANA-image)" }</option>
-                </select>
+                <div>
+                    <select class="form-input" id="fdo-type" required=true
+                            onchange=link.callback(|e: ChangeData| Msg::ChangeDataType(e))>
+                        <option>{ "image/TIFF (media-type-IANA-image)" }</option>
+                        <option>{ "image/PNG  (media-type-IANA-image)" }</option>
+                        <option>{ "Provide PID of a data type" }</option>
+                    </select>
+                    <input class="form-input" type="text" id="fdo-type-pid" disabled=disabled_value
+                        onchange=link.callback(|e: ChangeData| Msg::ChangeDataType(e))
+                    />
+                </div>
             </>
         }
     }
