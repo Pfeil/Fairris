@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 
-use super::PidInfo;
+use super::{PidInfo, Model};
 use crate::service_communication::primitive_types::Pid;
+
+use yew::prelude::*;
+
 
 #[derive(Default)]
 pub struct KnownPids {
@@ -10,21 +13,20 @@ pub struct KnownPids {
 }
 
 impl KnownPids {
-    pub fn find(&self, pid: &str) -> &PidInfo {
-        // TODO handle the unwrap better.
-        self.known_pids.get(pid.into()).unwrap()
+    pub fn find(&self, pid: &str) -> Option<&PidInfo> {
+        self.known_pids.get(pid.into())
     }
 }
 
 impl KnownPids {
-    pub fn with_dummy() -> Self {
+    pub fn with_dummy(model_link: ComponentLink<Model>) -> Self {
         log::info!("Will insert some dummy Pid objects for testing.");
         let dummy_prefix = "kitdm/dummy";
         let pids = vec![
-            PidInfo::default(),
-            PidInfo::default(),
-            PidInfo::default(),
-            PidInfo::default(),
+            PidInfo::default(model_link.clone()),
+            PidInfo::default(model_link.clone()),
+            PidInfo::default(model_link.clone()),
+            PidInfo::default(model_link.clone()),
         ];
         let mut known_pids = HashMap::new();
         pids.into_iter().enumerate().for_each(|(num, mut info)| {

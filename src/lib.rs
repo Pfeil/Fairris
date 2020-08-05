@@ -22,8 +22,10 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[derive(Switch, Debug, Clone)]
 pub enum AppRoute {
-    #[to = "/create"]
+    #[to = "/createObject"]
     CreateFdo,
+    #[to = "/createCollection"]
+    CreateCollection,
     #[to = "/fdo/{*:path}"]
     Details { path: String },
     #[to = "/search"]
@@ -40,7 +42,7 @@ pub struct Model {
 #[derive(Eq, PartialEq, Debug)]
 pub enum Msg {
     AddPidItem(PidInfo),
-    Remove,
+    Remove(String),
     Error(String),
 }
 
@@ -49,8 +51,7 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let known_pids: Rc<RefCell<KnownPids>> = Rc::new(RefCell::new(KnownPids::with_dummy()));
-
+        let known_pids: Rc<RefCell<KnownPids>> = Rc::new(RefCell::new(KnownPids::with_dummy(link.clone())));
         Self { link, known_pids }
     }
 
@@ -61,6 +62,10 @@ impl Component for Model {
                 log::debug!("Adding new item: {:?}", item);
                 self.known_pids.borrow_mut().insert(item.pid().clone(), item);
             },
+            Msg::Remove(pid) => {
+                log::debug!("Removing item: {}", pid);
+                self.known_pids.borrow_mut().remove(&pid);
+            }
             other => log::error!("Unimplemented message: {:?}", other),
         }
         true
@@ -78,10 +83,13 @@ impl Component for Model {
         let router_function = move |switch: AppRoute| {
             match switch {
                 AppRoute::CreateFdo => html! {<CreateComponent model_link=model_link.clone() />},
+                AppRoute::CreateCollection => html! {},
                 AppRoute::Details { ref path } => {
-                    //html!{}
-                    log::info!("Got id: {}", path);
-                    known_pids.borrow().find(path).view_as_details_page()
+                    known_pids.borrow().find(path)
+                        .map_or_else(
+                            || html!{<p>{"Object not locally available."}</p>},
+                            |item| item.view_as_details_page()
+                        )
                 }
                 AppRoute::Search => html! {<SearchComponent/>},
                 AppRoute::Index => html! {<CreateComponent model_link=model_link.clone() />},
@@ -92,7 +100,7 @@ impl Component for Model {
                 <div id="sidebar" class="maincolumns">
                     <div id="pidbuttons">
                         <RouterButton<AppRoute> route=AppRoute::CreateFdo>{ "Register" }</RouterButton<AppRoute>>
-                        <button onclick=self.link.callback(|_| Msg::Remove)>{ "Collection" }</button>
+                        <RouterButton<AppRoute> route=AppRoute::CreateCollection>{ "Collection" }</RouterButton<AppRoute>>
                         <RouterButton<AppRoute> route=AppRoute::Search>{ "Search" }</RouterButton<AppRoute>>
                     </div>
                     <div id="workspace" class="scroll-vertical">

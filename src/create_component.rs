@@ -129,14 +129,15 @@ impl Component for CreateComponent {
                     .header("Content-Type", "application/json")
                     .body(Json(&new_object))
                     .expect("Failed to build this request.");
+                let model_link = self.props.model_link.clone();
                 let task = FetchService::fetch(
                     request,
-                    self.props.model_link.callback(|response: Response<Result<String, Error>>| {
+                    self.props.model_link.callback(move |response: Response<Result<String, Error>>| {
                         if response.status().is_success() {
                             serde_json::from_str(
                                 response.body().as_ref().expect("Get reference from body.").as_str()
                             ).and_then(|record| {
-                                Ok(super::Msg::AddPidItem(PidInfo::from_registered(record)))
+                                Ok( super::Msg::AddPidItem(PidInfo::from_registered(record, model_link.clone())) )
                             }).unwrap_or_else(|e| super::Msg::Error(format!("Error parsing record: {:?}", e)) )
                         } else {
                             // TODO should not the form actually show some error here?

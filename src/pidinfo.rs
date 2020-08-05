@@ -1,13 +1,14 @@
-use super::AppRoute;
+use super::{AppRoute, Model, Msg};
 use crate::service_communication::pit_record::PidRecord;
 use serde_json as json;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-#[derive(Eq, PartialEq, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct PidInfo {
     record: PidRecord,
     state: State,
+    model_link: ComponentLink<Model>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -17,30 +18,33 @@ pub enum State {
     Clean,
 }
 
-impl Default for PidInfo {
-    fn default() -> Self {
+impl PidInfo {
+    pub fn default(model_link: ComponentLink<Model>) -> Self {
         PidInfo {
             record: PidRecord::default(),
             state: State::Unregistered,
+            model_link,
         }
     }
-}
 
-impl PidInfo {
-    pub fn from_registered(record: PidRecord) -> Self {
-        Self::from(record, State::Clean)
+    pub fn from_registered(record: PidRecord, model_link: ComponentLink<Model>) -> Self {
+        Self::from(record, State::Clean, model_link)
     }
 
-    pub fn from_unregistered(record: PidRecord) -> Self {
-        Self::from(record, State::Unregistered)
+    pub fn from_unregistered(record: PidRecord, model_link: ComponentLink<Model>) -> Self {
+        Self::from(record, State::Unregistered, model_link)
     }
 
-    pub fn from_modified(record: PidRecord) -> Self {
-        Self::from(record, State::Modified)
+    pub fn from_modified(record: PidRecord, model_link: ComponentLink<Model>) -> Self {
+        Self::from(record, State::Modified, model_link)
     }
 
-    fn from(record: PidRecord, state: State) -> Self {
-        Self { record, state }
+    fn from(record: PidRecord, state: State, model_link: ComponentLink<Model>) -> Self {
+        Self {
+            record,
+            state,
+            model_link,
+        }
     }
 
     pub fn state_mut(&mut self) -> &mut State {
@@ -57,6 +61,7 @@ impl PidInfo {
 
     pub fn view_as_list_item(&self) -> Html {
         let pid = self.record.pid.clone();
+        let pid2 = pid.clone();
         html! {
                 <div class="piditem">
                 <RouterButton<AppRoute> route=AppRoute::Details{path: pid} classes="fdo-button">
@@ -64,7 +69,7 @@ impl PidInfo {
                     <p>{ self.record.describe() }</p>
                     <p>{ format!("{:?}", self.state) }</p>
                 </RouterButton<AppRoute>>
-                <button class="fdo-remove-button">{"-"}</button>
+                <button onclick=self.model_link.callback( move |_| Msg::Remove(pid2.clone()) ) class="fdo-remove-button">{"-"}</button>
                 </div>
         }
     }
@@ -107,3 +112,11 @@ impl PidInfo {
             .collect()
     }
 }
+
+impl PartialEq for PidInfo {
+    fn eq(&self, other: &Self) -> bool {
+        self.record == other.record && self.state == other.state
+    }
+}
+
+impl Eq for PidInfo {}
