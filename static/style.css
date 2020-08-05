@@ -7,6 +7,7 @@
     --color-fg2: #1F363D;
 
     --color-ok: lightgreen;
+    --color-remove: #d6c2b9;
 }
 
 body {
@@ -58,12 +59,20 @@ body {
     font-size: larger;
 }
 
-.piditem {
+.fdo-button {
     background-color: var(--color-bg2);
-    padding: 0.5em;
-    /* border: 0.1em solid black; */
-    margin: 0.4em;
     width: calc(100% - 0.8em);
+}
+
+.piditem {
+    display: flex;
+    margin: 0.4em;
+}
+
+.fdo-remove-button {
+    background-color: var(--color-remove);
+    border-color: lighter(var(--color-remove));
+    font-size: larger;
 }
 
 p {
@@ -96,7 +105,11 @@ p {
 
 .two-column-lefty {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto auto;
+}
+
+.two-column-lefty * {
+    align-self: center;
 }
 
 .image-placeholder {

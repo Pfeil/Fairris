@@ -51,15 +51,21 @@ impl PidInfo {
         &self.record.pid
     }
 
+    pub fn pid_mut(&mut self) -> &mut String {
+        &mut self.record.pid
+    }
+
     pub fn view_as_list_item(&self) -> Html {
         let pid = self.record.pid.clone();
         html! {
-                // TODO make sure that in the details page, the actual data is shown.
-                <RouterButton<AppRoute> route=AppRoute::Details{path: pid} classes="piditem">
+                <div class="piditem">
+                <RouterButton<AppRoute> route=AppRoute::Details{path: pid} classes="fdo-button">
                     <p>{ self.record.pid.as_str() }</p>
                     <p>{ self.record.describe() }</p>
                     <p>{ format!("{:?}", self.state) }</p>
                 </RouterButton<AppRoute>>
+                <button class="fdo-remove-button">{"-"}</button>
+                </div>
         }
     }
 
@@ -75,11 +81,9 @@ impl PidInfo {
                         <p>{ self.record.describe() }</p>
                         <p class="align-right">{ "Status:" }</p>
                         <p>{ format!("{:?}", self.state) }</p>
-                        {
-                            self.view_record()
-                        }
                     </div>
                 </div>
+                <div class="two-column-lefty">{ self.view_record() }</div>
                 <div class="fdo-actions"><p>{ "Placeholder for Action Buttons here." }</p></div>
                 <div class="action-placeholder"><p>{ "Placeholder for action visualization. This could be i.e. viewing raw metadata, visualizations, or the possibility to update your FDO." }</p></div>
             </div>

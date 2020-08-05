@@ -16,23 +16,25 @@ impl KnownPids {
     }
 }
 
-//impl Default for KnownPids {
-//    fn default() -> Self {
-//        log::info!("Will insert some dummy Pid objects for testing.");
-//        let pids = vec![
-//            PidInfo::default(),
-//            PidInfo::default(),
-//            PidInfo::default(),
-//            PidInfo::default(),
-//        ];
-//        let mut known_pids = HashMap::new();
-//        pids.into_iter().enumerate().for_each(|(num, mut info)| {
-//            info.pid = format!("{}_{}", info.pid, num);
-//            known_pids.insert(info.pid.clone(), info);
-//        });
-//        KnownPids { known_pids }
-//    }
-//}
+impl KnownPids {
+    pub fn with_dummy() -> Self {
+        log::info!("Will insert some dummy Pid objects for testing.");
+        let dummy_prefix = "kitdm/dummy";
+        let pids = vec![
+            PidInfo::default(),
+            PidInfo::default(),
+            PidInfo::default(),
+            PidInfo::default(),
+        ];
+        let mut known_pids = HashMap::new();
+        pids.into_iter().enumerate().for_each(|(num, mut info)| {
+            let pid = info.pid_mut();
+            pid.push_str(format!("{}_{}", dummy_prefix, num).as_str());
+            known_pids.insert(pid.clone(), info);
+        });
+        KnownPids { known_pids }
+    }
+}
 
 impl Deref for KnownPids {
     type Target = HashMap<Pid, PidInfo>;

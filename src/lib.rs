@@ -49,7 +49,7 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let known_pids: Rc<RefCell<KnownPids>> = Rc::new(RefCell::new(KnownPids::default()));
+        let known_pids: Rc<RefCell<KnownPids>> = Rc::new(RefCell::new(KnownPids::with_dummy()));
 
         Self { link, known_pids }
     }
@@ -91,9 +91,9 @@ impl Component for Model {
             <div id="everything">
                 <div id="sidebar" class="maincolumns">
                     <div id="pidbuttons">
-                        <RouterButton<AppRoute> route=AppRoute::CreateFdo>{ "+" }</RouterButton<AppRoute>>
-                        <RouterButton<AppRoute> route=AppRoute::Search>{ "search" }</RouterButton<AppRoute>>
-                        <button onclick=self.link.callback(|_| Msg::Remove)>{ "-" }</button>  // TODO this should create a callback to remove a pid.
+                        <RouterButton<AppRoute> route=AppRoute::CreateFdo>{ "Register" }</RouterButton<AppRoute>>
+                        <button onclick=self.link.callback(|_| Msg::Remove)>{ "Collection" }</button>
+                        <RouterButton<AppRoute> route=AppRoute::Search>{ "Search" }</RouterButton<AppRoute>>
                     </div>
                     <div id="workspace" class="scroll-vertical">
                         { for self.known_pids.borrow().iter().map(|(_pid, pidinfo)| pidinfo.view_as_list_item()) }
