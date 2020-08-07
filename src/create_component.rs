@@ -1,5 +1,6 @@
 use super::Model;
 use super::service_communication::{
+    *,
     RecordEntry,
     pit_record::PidRecord,
     primitive_types::*,  // TODO make newtypes around primitives so they are reusable and this import is not needed anymore.

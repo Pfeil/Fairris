@@ -7,7 +7,10 @@ pub mod primitive_types;
 pub mod pit_record;
 pub mod types;
 
-use pit_record::PidRecord;
+mod metadata;
+
+pub use pit_record::PidRecord;
+pub use metadata::*;
 
 pub trait RecordEntry {
     /// Writes content of entry representation into the given record.

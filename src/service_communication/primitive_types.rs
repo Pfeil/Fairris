@@ -1,6 +1,6 @@
 //! This module contains datatypes and profiles as defined in the registry.
 use chrono::prelude::*;
-use std::ops::{Deref, DerefMut};
+pub use std::ops::{Deref, DerefMut};
 
 /// This macro will shorten boilerplate to implement Deref and DerefMut for simple Newtype patterns.
 /// deref() will resolve to &self.0
@@ -30,6 +30,7 @@ pub type Pid = String;
 /// Represents http://dtr-test.pidconsortium.net/#objects/21.T11148/8bcd7b4a8a9c74402c71
 // TODO Could ba an alias for a URL type instead, which does not exist yet.
 pub type PidProxy = String;
+pub type URL = String;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Profile {

@@ -46,15 +46,21 @@ impl From<i32> for DataType {
     }
 }
 
+impl DataType {
+    pub fn as_json(&self) -> json::Value {
+        match self {
+            DataType::Tiff => "tiff".into(),
+            DataType::Png => "png".into(),
+            DataType::Pid(pid) => json::Value::String(pid.into()),
+        }
+    }
+}
+
 impl RecordEntry for DataType {
     fn write(&self, record: &mut PidRecord) {
         let id = "21.T11148/c83481d4bf467110e7c9".into();
         let name = "digitalObjectType".into();
-        let image_type = match self {
-            DataType::Tiff => "tiff".into(),
-            DataType::Png => "png".into(),
-            DataType::Pid(pid) => json::Value::String(pid.into()),
-        };
+        let image_type = self.as_json();
         // TODO how to set the image type png/tiff? Currently the PID just says "iana image"
         record.add_attribute(id, name, image_type);
     }
@@ -141,41 +147,6 @@ impl RecordEntry for Version {
             let value = json::Value::String(self.0.clone());
             record.add_attribute(id, name, value);
         }
-    }
-}
-
-#[derive(Default)]
-pub struct MetadataDocumentPid(primitive::Pid);
-
-impl RecordEntry for MetadataDocumentPid {
-    fn write(&self, record: &mut PidRecord) {
-        let id = "21.T11148/e0efd6b4c8e71c6d077b".into(); // TODO asjust to actual type as soon as it exists
-        let name = "metadataObject".into();
-        let value = json::Value::String(self.0.clone());
-        record.add_attribute(id, name, value);
-    }
-}
-
-newtype_deref!(MetadataDocumentPid, primitive::Pid);
-
-#[derive(Default)]
-pub struct MetadataDocument {
-    pub scheme: primitive::PidProxy,
-    pub pid: primitive::PidProxy,
-    pub r#type: primitive::PidProxy,
-}
-
-impl RecordEntry for MetadataDocument {
-    fn write(&self, record: &mut PidRecord) {
-        let id = "21.T11148/e0efd6b4c8e71c6d077b".into();
-        let name = "metadataDocument".into();
-        let value = json::json!({
-            "metadataScheme": self.scheme,
-            "@id": self.pid,
-            "@type": self.r#type
-        });
-        let value = json::Value::String(value.to_string()); // PIT service only parses json strings as values
-        record.add_attribute(id, name, value);
     }
 }
 
