@@ -70,9 +70,8 @@ body {
 }
 
 .fdo-remove-button {
-    background-color: var(--color-remove);
-    border-color: lighter(var(--color-remove));
-    font-size: larger;
+    background-color: var(--color-bg2);
+    font-size: small;
 }
 
 p {
@@ -86,7 +85,7 @@ p {
 
 .okbutton {
     font-size: larger;
-    background-color:var(--color-ok);
+    background-color: var(--color-ok);
 }
 
 .column-form {

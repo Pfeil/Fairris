@@ -69,7 +69,7 @@ impl PidInfo {
                     <p>{ self.record.describe() }</p>
                     <p>{ format!("{:?}", self.state) }</p>
                 </RouterButton<AppRoute>>
-                <button onclick=self.model_link.callback( move |_| Msg::Remove(pid2.clone()) ) class="fdo-remove-button">{"-"}</button>
+                <button onclick=self.model_link.callback( move |_| Msg::Remove(pid2.clone()) ) class="fdo-remove-button">{"❌"}</button>
                 </div>
         }
     }
