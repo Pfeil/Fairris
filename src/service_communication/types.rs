@@ -20,6 +20,7 @@ impl RecordEntry for primitive::Profile {
     }
 }
 
+#[derive(Debug)]
 pub enum DataType {
     Tiff,
     Png,
@@ -61,7 +62,15 @@ impl RecordEntry for DataType {
         let id = "21.T11148/c83481d4bf467110e7c9".into();
         let name = "digitalObjectType".into();
         let image_type = self.as_json();
-        // TODO how to set the image type png/tiff? Currently the PID just says "iana image"
+        record.add_attribute(id, name, image_type);
+    }
+}
+
+impl DataType {
+    pub fn write_str(record: &mut PidRecord, datatype: &str) {
+        let id = "21.T11148/c83481d4bf467110e7c9".into();
+        let name = "digitalObjectType".into();
+        let image_type = json::Value::String(datatype.into());
         record.add_attribute(id, name, image_type);
     }
 }
@@ -100,9 +109,15 @@ impl RecordEntry for primitive::Checksum {
 
 impl RecordEntry for primitive::ObjectLocation {
     fn write(&self, record: &mut PidRecord) {
+        Self::write_str(record, self.as_str())
+    }
+}
+
+impl primitive::ObjectLocation {
+    pub fn write_str(record: &mut PidRecord, location: &str) {
         let id = "21.T11148/b8457812905b83046284".into();
         let name = "digitalObjectLocation".into();
-        let value = json::Value::String((*self).clone());
+        let value = json::Value::String(location.into());
         record.add_attribute(id, name, value);
     }
 }

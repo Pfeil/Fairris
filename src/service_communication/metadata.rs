@@ -40,6 +40,7 @@ impl RecordEntry for MetadataDocument {
     }
 }
 
+#[derive(Default, Debug)]
 pub struct MetadataObjectReference {
     pub context: MetadataContext,
     pub resource: ResourceReference,
@@ -51,9 +52,9 @@ impl RecordEntry for MetadataObjectReference {
         let id = "21.T11148/134c84df7eca7bced374".into();
         let name = "metadataObject".into();
         let value = json::json!({
-            "context": self.context,
-            "resource": self.resource,
-            "type": self.typehint.as_json()
+            "relation": self.context,
+            "resource": self.resource.as_json(),
+            "typehint": self.typehint.as_json()
         });
         let value = json::Value::String(value.to_string());
         record.add_attribute(id, name, value);
@@ -62,12 +63,35 @@ impl RecordEntry for MetadataObjectReference {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum MetadataContext {
-    Describing,
+    #[serde(rename = "annotating")]
+    Annotating,
+    #[serde(rename = "ontology")]
     Ontology,
+}
+
+impl Default for MetadataContext {
+    fn default() -> Self {
+        Self::Annotating
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ResourceReference {
     Handle(primitive::Pid),
     Url(primitive::URL),
+}
+
+impl Default for ResourceReference {
+    fn default() -> Self {
+        Self::Url(String::new())
+    }
+}
+
+impl ResourceReference {
+    pub fn as_json(&self) -> json::Value {
+        match self {
+            ResourceReference::Url(url) => json::Value::String(url.clone()),
+            ResourceReference::Handle(handle) => json::Value::String(handle.clone()),
+        }
+    }
 }

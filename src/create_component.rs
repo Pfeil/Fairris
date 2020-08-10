@@ -1,23 +1,23 @@
-use super::Model;
 use super::service_communication::{
-    *,
-    RecordEntry,
     pit_record::PidRecord,
-    primitive_types::*,  // TODO make newtypes around primitives so they are reusable and this import is not needed anymore.
+    primitive_types::*, // TODO make newtypes around primitives so they are reusable and this import is not needed anymore.
     types::*,
+    RecordEntry,
+    *,
 };
+use super::Model;
 
-use yew::prelude::*;
-use yew::services::{fetch::{FetchService, Request, Response, FetchTask}};
-use yew::format::Json;
-use anyhow::Error;
 use crate::pidinfo::PidInfo;
+use anyhow::Error;
+use yew::format::Json;
+use yew::prelude::*;
+use yew::services::fetch::{FetchService, FetchTask, Request, Response};
 
 pub struct CreateComponent {
     link: ComponentLink<Self>,
     props: Props,
     task: Option<FetchTask>,
-    
+
     profile: Profile,
     data_type: DataType,
     data_url: ObjectLocation,
@@ -25,13 +25,11 @@ pub struct CreateComponent {
     etag: Checksum,
     date_created: DateCreated,
     date_modified: DateModified,
-    metadata_document: MetadataDocument,
-    license_string: LicenseString,
-    
-    metadata_document_pid: MetadataDocumentPid,
+    metadata_document: MetadataObjectReference,
+    metadata_urls: Vec<String>,
+
     version: Version,
     contributors: Contributors,
-
     // Recommended profile (optional)
     //derived_from: Pid,
     //specialization_of: Pid,
@@ -55,19 +53,13 @@ pub enum Msg {
     ChangeLicense(ChangeData),
     // IS_DUMMY ChangeChecksum(ChangeData),
     // IS_DUMMY ChangeDateCreation(ChangeData),
-
-    ChangeVersion(ChangeData),
-
     // IS_DUMMY ChangeDateModification(ChangeData),
-    
-    ChangeMetadataPidUrl(ChangeData),
-    ChangeMetadataSchemaUrl(ChangeData),
-    ChangeMetadataTypeUrl(ChangeData),
-    ChangeLicenseString(ChangeData),
+    ChangeVersion(ChangeData),
+    ChangeMetadataUrls(ChangeData),
 
-    ChangeMetadataPid(ChangeData),
-    
     SendForm,
+    RegisteredMetadata(PidInfo),
+    RegisteredObject(PidInfo),
     Error(String),
 }
 
@@ -90,9 +82,8 @@ impl Component for CreateComponent {
             date_modified: DateModified::default(),
             version: Version::default(),
 
-            metadata_document: MetadataDocument::default(),
-            metadata_document_pid: MetadataDocumentPid::default(),
-            license_string: LicenseString::default(),
+            metadata_document: MetadataObjectReference::default(),
+            metadata_urls: Vec::default(),
             contributors: Contributors::default(),
         }
     }
@@ -100,55 +91,70 @@ impl Component for CreateComponent {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         log::debug!("Form received an update: {:?}", msg);
         match msg {
-            Msg::ChangeProfile(ChangeData::Select(input /*stdweb::web::html_element::SelectElement*/)) => {
-                log::info!("Change form profile to: ({:?}){:?}", input.selected_index(), input.value());
+            Msg::ChangeProfile(ChangeData::Select(
+                input, /*stdweb::web::html_element::SelectElement*/
+            )) => {
+                log::info!(
+                    "Change form profile to: ({:?}){:?}",
+                    input.selected_index(),
+                    input.value()
+                );
                 self.profile = Profile::from(input.selected_index());
             }
             Msg::ChangeDataType(ChangeData::Select(input)) => {
-                log::info!("Change data type to: ({:?}){:?}", input.selected_index(), input.value());
+                log::info!(
+                    "Change data type to: ({:?}){:?}",
+                    input.selected_index(),
+                    input.value()
+                );
                 self.data_type = DataType::from(input.selected_index());
             }
             Msg::ChangeDataType(ChangeData::Value(pid)) => self.data_type = DataType::Pid(pid),
             Msg::ChangeDataURL(ChangeData::Value(url)) => *self.data_url = url,
             Msg::ChangeLifecycle(ChangeData::Select(input)) => {
-                log::info!("Change lifecycle to: ({:?}){:?}", input.selected_index(), input.value());
+                log::info!(
+                    "Change lifecycle to: ({:?}){:?}",
+                    input.selected_index(),
+                    input.value()
+                );
                 self.policy.lifecycle = Lifecycle::from(input.selected_index());
             }
             Msg::ChangeLicense(ChangeData::Select(input)) => {
-                log::info!("Change license to: ({:?}){:?}", input.selected_index(), input.value());
+                log::info!(
+                    "Change license to: ({:?}){:?}",
+                    input.selected_index(),
+                    input.value()
+                );
                 self.policy.license = License::from(input.selected_index());
             }
             Msg::ChangeVersion(ChangeData::Value(version)) => *self.version = version,
-            Msg::ChangeMetadataPidUrl(ChangeData::Value(url)) => self.metadata_document.pid = url,
-            Msg::ChangeMetadataSchemaUrl(ChangeData::Value(url)) => self.metadata_document.scheme = url,
-            Msg::ChangeMetadataTypeUrl(ChangeData::Value(url)) => self.metadata_document.r#type = url,
-            Msg::ChangeLicenseString(ChangeData::Value(license)) => *self.license_string = license,
-            Msg::ChangeMetadataPid(ChangeData::Value(pid)) => *self.metadata_document_pid = pid,
+            Msg::ChangeMetadataUrls(ChangeData::Value(urls)) => urls
+                .split("\n")
+                .for_each(|url| self.metadata_urls.push(url.into())),
             Msg::SendForm => {
-                let new_object = self.extract_record();
-                let request = Request::post("http://localhost:8090/api/v1/pit/pid/")
-                    .header("Content-Type", "application/json")
-                    .body(Json(&new_object))
-                    .expect("Failed to build this request.");
-                let model_link = self.props.model_link.clone();
-                let task = FetchService::fetch(
-                    request,
-                    self.props.model_link.callback(move |response: Response<Result<String, Error>>| {
-                        if response.status().is_success() {
-                            serde_json::from_str(
-                                response.body().as_ref().expect("Get reference from body.").as_str()
-                            ).and_then(|record| {
-                                Ok( super::Msg::AddPidItem(PidInfo::from_registered(record, model_link.clone())) )
-                            }).unwrap_or_else(|e| super::Msg::Error(format!("Error parsing record: {:?}", e)) )
-                        } else {
-                            // TODO should not the form actually show some error here?
-                            super::Msg::Error(format!("HTTP error: {:?}", response))
-                        }
-                    }),
-                ).map_err(|e| log::error!("Error requesting PID creation: {}", e));
-                self.task = task.ok();
-                log::info!("SendForm has finished.");
+                let new_metadata = self.extract_metadata_json();
+                self.register_metadata(new_metadata);
             }
+            Msg::RegisteredMetadata(item) => {
+                let meta_pid = item.pid().clone();
+                self.props
+                    .model_link
+                    .send_message(super::Msg::AddPidItem(item));
+                let mut record = self.extract_record();
+                self.metadata_document.context = MetadataContext::Annotating;
+                self.metadata_document.resource = ResourceReference::Handle(meta_pid);
+                self.metadata_document.typehint = DataType::Pid("what/ever".into()); // TODO this hint will likely be removed.
+                self.metadata_document.write(&mut record);
+                let record = serde_json::to_value(record).unwrap();
+                self.register_image_data(record);
+            }
+            Msg::RegisteredObject(item) => {
+                // TODO think about showing a success message
+                self.props
+                    .model_link
+                    .send_message(super::Msg::AddPidItem(item))
+            }
+            Msg::Error(message) => log::error!("Received error: {}", message), // TODO think about showing an error message
             other => log::error!("Unimplemented message: {:?}", other),
         };
         true
@@ -162,16 +168,31 @@ impl Component for CreateComponent {
             <div id="content" class="maincolumns scroll-vertical">
                 <p>{ format!("Adjust the profile to get a form fitting your FDO. Current Profile is {:?}", self.profile) }</p>
                 <div class="two-column-lefty">
-                    { self.profile.display_form(&self.link) }
-                    { self.data_type.display_form(&self.link) }
-                    { self.data_url.display_form(&self.link) }
-                    { self.metadata_document.display_form(&self.link) }
-                    { self.policy.display_form(&self.link) }
-                    { self.etag.display_form(&self.link) }
-                    { self.date_created.display_form(&self.link) }
-                    { self.date_modified.display_form(&self.link) }
-                    { self.version.display_form(&self.link) }
-                    { self.contributors.display_form(&self.link) }
+                    {
+                        match self.profile {
+                            Profile::Testbed4infSimplified => html! { <>
+                                { self.profile.display_form(&self.link) }
+                                { self.data_type.display_form(&self.link) }
+                                { self.data_url.display_form(&self.link) }
+                                { self.metadata_document.display_form(&self.link) }
+                                { self.version.display_form(&self.link) }
+                                </>
+                            },
+                            _ => html! { <>
+                                { self.profile.display_form(&self.link) }
+                                { self.data_type.display_form(&self.link) }
+                                { self.data_url.display_form(&self.link) }
+                                { self.metadata_document.display_form(&self.link) }
+                                { self.policy.display_form(&self.link) }
+                                { self.etag.display_form(&self.link) }
+                                { self.date_created.display_form(&self.link) }
+                                { self.date_modified.display_form(&self.link) }
+                                { self.version.display_form(&self.link) }
+                                { self.contributors.display_form(&self.link) }
+                                </>
+                            }
+                        }
+                    }
 
                     <label class="form-description" for="derived-from">{ "Derived from (handles):" }</label>
                     <input class="form-input" type="text" id="derived-from" required=true />
@@ -199,20 +220,111 @@ impl Component for CreateComponent {
 }
 
 impl CreateComponent {
-    fn extract_record(&self) -> serde_json::Value {
+    fn extract_record(&self) -> PidRecord {
         let mut record = PidRecord::default();
         self.profile.write(&mut record);
         self.data_type.write(&mut record);
         self.data_url.write(&mut record);
-        self.metadata_document.write(&mut record);
+        //self.metadata_document.write(&mut record);
         self.policy.write(&mut record);
         self.etag.write(&mut record);
         self.date_created.write(&mut record);
         self.date_modified.write(&mut record);
         self.version.write(&mut record);
         // TODO self.contributors.write(&mut record);
+        record
+    }
 
-        serde_json::to_value(record).unwrap()
+    fn extract_json(&self) -> serde_json::Value {
+        serde_json::to_value(self.extract_record()).unwrap()
+    }
+
+    fn extract_metadata_record(&self) -> PidRecord {
+        let mut record = PidRecord::default();
+        self.profile.write(&mut record);
+        DataType::write_str(&mut record, "application/json+ld");
+        self.metadata_urls.iter().for_each(|url| {
+            ObjectLocation::write_str(&mut record, url.as_str());
+        });
+        // TODO add ontology and context as metadata.
+        // defaults
+        self.policy.write(&mut record);
+        self.etag.write(&mut record);
+        self.date_created.write(&mut record);
+        self.date_modified.write(&mut record);
+        self.version.write(&mut record);
+        record
+    }
+
+    fn extract_metadata_json(&self) -> serde_json::Value {
+        serde_json::to_value(self.extract_metadata_record()).unwrap()
+    }
+
+    fn register_metadata(&mut self, record: serde_json::Value) {
+        let model_link = self.props.model_link.clone();
+        let callback = self.link
+                .callback(move |response: Response<Result<String, Error>>| {
+                    if response.status().is_success() {
+                        serde_json::from_str(
+                            response
+                                .body()
+                                .as_ref()
+                                .expect("Get reference from body.")
+                                .as_str(),
+                        )
+                        .and_then(|record| {
+                            Ok(Msg::RegisteredMetadata(PidInfo::from_registered(
+                                record,
+                                model_link.clone(),
+                            )))
+                        })
+                        .unwrap_or_else(|e| Msg::Error(format!("Error parsing record: {:?}", e)))
+                    } else {
+                        Msg::Error(format!("HTTP error: {:?}", response))
+                    }
+                });
+        self.register(record, callback);
+    }
+
+    fn register_image_data(&mut self, record: serde_json::Value) {
+        let model_link = self.props.model_link.clone();
+        let callback = self.link.callback(move |response: Response<Result<String, Error>>| {
+                if response.status().is_success() {
+                    serde_json::from_str(
+                        response
+                            .body()
+                            .as_ref()
+                            .expect("Get reference from body.")
+                            .as_str(),
+                    )
+                    .and_then(|record| {
+                        Ok(Msg::RegisteredObject(PidInfo::from_registered(
+                            record,
+                            model_link.clone(),
+                        )))
+                    })
+                    .unwrap_or_else(|e| Msg::Error(format!("Error parsing record: {:?}", e)))
+                } else {
+                    Msg::Error(format!("HTTP error: {:?}", response))
+                }
+            });
+        self.register(record, callback)
+    }
+
+    fn register(
+        &mut self,
+        record: serde_json::Value,
+        callback: Callback<Response<Result<String, Error>>>,
+    ) {
+        log::debug!("register() was called.");
+        let request = Request::post("http://localhost:8090/api/v1/pit/pid/")
+            .header("Content-Type", "application/json")
+            .body(Json(&record))
+            .expect("Failed to build this request.");
+        let task = FetchService::fetch(request, callback)
+            .map_err(|e| log::error!("Error creating task to register metadata: {}", e));
+        self.task = task.ok();
+        log::debug!("register() has finished.");
     }
 }
 
@@ -240,7 +352,7 @@ impl FormElement for Profile {
 
 impl FormElement for DataType {
     fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
-        let disabled_value: bool = if let Self::Pid(_) = self {false} else {true};
+        let disabled_value: bool = if let Self::Pid(_) = self { false } else { true };
         html! {
             <>
                 <label class="form-description" for="fdo-type">{ "Digital Object Data Type:" }</label>
@@ -344,59 +456,25 @@ impl FormElement for Version {
     }
 }
 
-impl FormElement for MetadataDocumentPid {
-    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
-        html! {
-            <>
-            <label class="form-description" for="fdo-metadata">{ "Metadata handle:" }</label>
-            <input class="form-input" type="text" id="fdo-metadata" required=true
-                onchange=link.callback(|e: ChangeData| Msg::ChangeMetadataPid(e))
-            />
-            </>
-        }
-    }
-}
-
-impl FormElement for MetadataDocument {
-    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
-        html! {
-            <>
-            <label class="form-description" for="fdo-metadata-id">{ "Metadata PID as URL:" }</label>
-            <input class="form-input" type="text" id="fdo-metadata-id" required=true
-                onchange=link.callback(|e: ChangeData| Msg::ChangeMetadataPidUrl(e))
-            />
-            <label class="form-description" for="fdo-metadata-schema">{ "Metadatas schema PID as URL:" }</label>
-            <input class="form-input" type="text" id="fdo-metadata-schema" required=true
-                onchange=link.callback(|e: ChangeData| Msg::ChangeMetadataSchemaUrl(e))
-            />
-            <label class="form-description" for="fdo-metadata-type">{ "Metadatas type PID as URL:" }</label>
-            <input class="form-input" type="text" id="fdo-metadata-type" required=true
-                onchange=link.callback(|e: ChangeData| Msg::ChangeMetadataTypeUrl(e))
-            />
-            </>
-        }
-    }
-}
-
-impl FormElement for LicenseString {
-    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
-        html! {
-            <>
-            <label class="form-description" for="fdo-license">{ "License:" }</label>
-            <input class="form-input" type="text" id="fdo-license" required=true
-                onchange=link.callback(|e: ChangeData| Msg::ChangeLicenseString(e))
-            />
-            </>
-        }
-    }
-}
-
 impl FormElement for Contributors {
     fn display_form(&self, _link: &ComponentLink<CreateComponent>) -> Html {
         html! {
             <>
             <p>{ "Contributors:" }</p>
             <p>{ "Placeholder contributers will be inserted for demonstration." }</p>
+            </>
+        }
+    }
+}
+
+impl FormElement for MetadataObjectReference {
+    fn display_form(&self, link: &ComponentLink<CreateComponent>) -> Html {
+        html! {
+            <>
+            <label class="form-description" for="fdo-metadata-urls">{ "Annotation urls:" }</label>
+            <textarea class="form-input" id="fdo-metadata-urls" required=true
+                onchange=link.callback(|e: ChangeData| Msg::ChangeMetadataUrls(e))
+            />
             </>
         }
     }
