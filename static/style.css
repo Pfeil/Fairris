@@ -46,8 +46,7 @@ body {
     background-color: var(--color-bg-content);
     overflow-y: scroll;
     padding: 1.3em;
-    max-width: calc( 100% - 4em);
-    max-height: calc( 100% - 8em);
+    max-height: calc( 100% - 5.2em);
 }
 
 #pidbuttons {
