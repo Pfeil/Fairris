@@ -1,13 +1,16 @@
 :root {
     /* COLOR PALETTE */
-    --color-bg1: #F5F6F4;
-    --color-bg2: #D1D3C4;
-    --color-highlight: #BDC696;
-    --color-fg1: #775253;
-    --color-fg2: #1F363D;
-
-    --color-ok: lightgreen;
-    --color-remove: #d6c2b9;
+    --color-bright1: white;
+    --color-dark1: #272B30;
+    --color-ok: #649242;
+    
+    --color-bg-content: var(--color-bright1);
+    --color-bg-sidebar: var(--color-dark1);
+    --color-header: var(--color-dark1);
+    --color-buttons-items: var(--color-bright1);
+    --color-buttons-header: var(--color-buttons-items);
+    --color-scroll-bg: var(--color-bg-sidebar);
+    --color-scroll-bar: var(--color-bg-content);
 }
 
 body {
@@ -21,7 +24,6 @@ body {
     grid-template-columns: repeat(4, 1fr);
     grid-template-areas: 
         "s c c c";
-    background-color: var(--color-bg1);
     height: inherit;
     width: inherit;
 }
@@ -36,20 +38,20 @@ body {
 
 #sidebar {
     grid-area: s;
-    /* background-color: aliceblue; */
+    background-color: var(--color-bg-sidebar);
 }
 
 #content {
     grid-area: c;
-    /* background-color: lightcyan; */
+    background-color: var(--color-bg-content);
     overflow-y: scroll;
-    padding: 2em;
+    padding: 1.3em;
     max-width: calc( 100% - 4em);
     max-height: calc( 100% - 8em);
 }
 
 #pidbuttons {
-    background-color: var(--color-fg2);
+    background-color: var(--color-header);
     padding: 10px;
     display: flex;
     justify-content: center;
@@ -60,17 +62,18 @@ body {
 }
 
 .fdo-button {
-    background-color: var(--color-bg2);
+    background-color: var(--color-buttons-items);
     width: calc(100% - 0.8em);
 }
 
 .piditem {
     display: flex;
     margin: 0.4em;
+    margin-left: 1.3em;
 }
 
 .fdo-remove-button {
-    background-color: var(--color-bg2);
+    background-color: var(--color-buttons-items);
     font-size: small;
 }
 
@@ -86,6 +89,10 @@ p {
 .okbutton {
     font-size: larger;
     background-color: var(--color-ok);
+    border-color: var(--color-ok);
+    color: white;
+    margin-top: 2em;
+    padding: 0.3em;
 }
 
 .column-form {
@@ -95,7 +102,7 @@ p {
 
 .scroll-vertical {
     overflow-y: scroll;
-    scrollbar-color: var(--color-highlight) var(--color-bg2);
+    scrollbar-color: var(--color-scroll-bar) var(--color-scroll-bg);
 }
 
 .align-right {
