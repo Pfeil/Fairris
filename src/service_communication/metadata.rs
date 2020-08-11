@@ -1,10 +1,9 @@
 use super::primitive_types as primitive;
-use primitive::{Deref, DerefMut};
-use super::types::*;
 use super::*;
+use primitive::{Deref, DerefMut};
 
+use serde::{Deserialize, Serialize};
 use serde_json as json;
-use serde::{Serialize, Deserialize};
 
 #[derive(Default)]
 pub struct MetadataDocumentPid(primitive::Pid);
@@ -44,24 +43,32 @@ impl RecordEntry for MetadataDocument {
 pub struct MetadataObjectReference {
     pub context: MetadataContext,
     pub resource: ResourceReference,
-    pub typehint: DataType,
 }
 
 impl RecordEntry for MetadataObjectReference {
     fn write(&self, record: &mut PidRecord) {
+        Self::write_new(record, self.context.clone(), self.resource.clone());
+    }
+}
+
+impl MetadataObjectReference {
+    pub fn write_new(
+        record: &mut PidRecord,
+        context: MetadataContext,
+        reference: ResourceReference,
+    ) {
         let id = "21.T11148/134c84df7eca7bced374".into();
         let name = "metadataObject".into();
         let value = json::json!({
-            "relation": self.context,
-            "resource": self.resource.as_json(),
-            "typehint": self.typehint.as_json()
+            "relation": context,
+            "resource": reference.as_json()
         });
         let value = json::Value::String(value.to_string());
         record.add_attribute(id, name, value);
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum MetadataContext {
     #[serde(rename = "annotating")]
     Annotating,
@@ -75,7 +82,7 @@ impl Default for MetadataContext {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ResourceReference {
     Handle(primitive::Pid),
     Url(primitive::URL),

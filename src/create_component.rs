@@ -143,7 +143,6 @@ impl Component for CreateComponent {
                 let mut record = self.extract_record();
                 self.metadata_document.context = MetadataContext::Annotating;
                 self.metadata_document.resource = ResourceReference::Handle(meta_pid);
-                self.metadata_document.typehint = DataType::Pid("what/ever".into()); // TODO this hint will likely be removed.
                 self.metadata_document.write(&mut record);
                 let record = serde_json::to_value(record).unwrap();
                 self.register_image_data(record);
@@ -253,6 +252,11 @@ impl CreateComponent {
         self.date_created.write(&mut record);
         self.date_modified.write(&mut record);
         self.version.write(&mut record);
+        MetadataObjectReference {
+            context: MetadataContext::Ontology,
+            resource: ResourceReference::Url("https://www.w3.org/ns/oa#Annotation".into()),
+        }
+        .write(&mut record);
         record
     }
 
@@ -262,33 +266,36 @@ impl CreateComponent {
 
     fn register_metadata(&mut self, record: serde_json::Value) {
         let model_link = self.props.model_link.clone();
-        let callback = self.link
-                .callback(move |response: Response<Result<String, Error>>| {
-                    if response.status().is_success() {
-                        serde_json::from_str(
-                            response
-                                .body()
-                                .as_ref()
-                                .expect("Get reference from body.")
-                                .as_str(),
-                        )
-                        .and_then(|record| {
-                            Ok(Msg::RegisteredMetadata(PidInfo::from_registered(
-                                record,
-                                model_link.clone(),
-                            )))
-                        })
-                        .unwrap_or_else(|e| Msg::Error(format!("Error parsing record: {:?}", e)))
-                    } else {
-                        Msg::Error(format!("HTTP error: {:?}", response))
-                    }
-                });
+        let callback = self
+            .link
+            .callback(move |response: Response<Result<String, Error>>| {
+                if response.status().is_success() {
+                    serde_json::from_str(
+                        response
+                            .body()
+                            .as_ref()
+                            .expect("Get reference from body.")
+                            .as_str(),
+                    )
+                    .and_then(|record| {
+                        Ok(Msg::RegisteredMetadata(PidInfo::from_registered(
+                            record,
+                            model_link.clone(),
+                        )))
+                    })
+                    .unwrap_or_else(|e| Msg::Error(format!("Error parsing record: {:?}", e)))
+                } else {
+                    Msg::Error(format!("HTTP error: {:?}", response))
+                }
+            });
         self.register(record, callback);
     }
 
     fn register_image_data(&mut self, record: serde_json::Value) {
         let model_link = self.props.model_link.clone();
-        let callback = self.link.callback(move |response: Response<Result<String, Error>>| {
+        let callback = self
+            .link
+            .callback(move |response: Response<Result<String, Error>>| {
                 if response.status().is_success() {
                     serde_json::from_str(
                         response
