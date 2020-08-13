@@ -128,9 +128,12 @@ impl Component for CreateComponent {
                 self.policy.license = License::from(input.selected_index());
             }
             Msg::ChangeVersion(ChangeData::Value(version)) => *self.version = version,
-            Msg::ChangeMetadataUrls(ChangeData::Value(urls)) => urls
+            Msg::ChangeMetadataUrls(ChangeData::Value(urls)) => {
+                self.metadata_urls.clear();
+                urls
                 .split("\n")
-                .for_each(|url| self.metadata_urls.push(url.into())),
+                .for_each(|url| self.metadata_urls.push(url.into()))
+            },
             Msg::SendForm => {
                 let new_metadata = self.extract_metadata_json();
                 self.register_metadata(new_metadata);
