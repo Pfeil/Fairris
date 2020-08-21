@@ -1,10 +1,11 @@
 [package]
 authors = ["Andreas Pfeil <pfeil@kit.edu>"]
-categories = ["FAIR Digital Objects"]
+categories = ["gui"]
 description = "A testbed interface to work with FAIR digital objects."
 edition = "2018"
 keywords = ["FDO"]
-#license = ""
+license = "Apache-2.0"
+license-file = "LICENSE"
 name = "fairris"
 readme = "README.md"
 #repository = ""
