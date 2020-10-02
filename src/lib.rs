@@ -84,20 +84,15 @@ impl Component for Model {
     fn view(&self) -> Html {
         let known_pids = self.known_pids.clone();
         let model_link = self.link.clone();
-        let router_function = move |switch: AppRoute| {
-            match switch {
+        let router_function = move |switch: AppRoute| match switch {
                 AppRoute::CreateFdo => html! {<CreateComponent model_link=model_link.clone() />},
                 AppRoute::CreateCollection => html! {},
-                AppRoute::Details { ref path } => {
-                    known_pids.borrow().find(path)
-                        .map_or_else(
-                            || html!{<p>{"Object not locally available."}</p>},
-                            |item| item.view_as_details_page()
-                        )
-                }
+            AppRoute::Details { ref path } => known_pids.borrow().find(path).map_or_else(
+                || Self::view_record_not_found_page(path),
+                |item| item.view_as_details_page(),
+            ),
                 AppRoute::Search => html! {<SearchComponent/>},
                 AppRoute::Index => Self::view_welcome_page(),
-            }
         };
         html! {
             <div id="everything">
@@ -118,7 +113,14 @@ impl Component for Model {
 }
 
 impl Model {
+    fn view_record_not_found_page(pid: &String) -> Html {
+        // TODO extend and style
+        html! {<p>{format!("Object {} not locally available.", pid)}</p>}
+    }
+
     fn view_welcome_page() -> Html {
+        // TODO extend and style
+        // TODO Add understandable introduction, tell the user that he may play around.
         html! {
             <div>
             <h1>{"Welcome to Fairris"}</h1>
@@ -127,8 +129,6 @@ impl Model {
                 Imagine this user interface to be a digital lab notebook, workflow system or IDE, depending on your needs. 
                 It will help you to manage and register your research data and may automate a lot of your work.
             "}</p>
-            <p>{"TODO: Add understandable introduction, tell the user that he may play around."}</p>
-            <p>{"TODO: Style this welcome page with CSS."}</p>
             </div>
         }
     }
