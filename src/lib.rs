@@ -41,6 +41,7 @@ pub struct Model {
 
 #[derive(Eq, PartialEq, Debug)]
 pub enum Msg {
+    AddDefaultItem,
     AddPidItem(PidInfo),
     Remove(String),
     Error(String),
@@ -51,7 +52,7 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let known_pids: Rc<RefCell<KnownPids>> = Rc::new(RefCell::new(KnownPids::with_dummy(link.clone())));
+        let known_pids: Rc<RefCell<KnownPids>> = Rc::new(RefCell::new(KnownPids::default()));
         Self { link, known_pids }
     }
 
@@ -65,6 +66,9 @@ impl Component for Model {
             Msg::Remove(pid) => {
                 log::debug!("Removing item: {}", pid);
                 self.known_pids.borrow_mut().remove(&pid);
+            }
+            Msg::AddDefaultItem => {
+                self.known_pids.borrow_mut().add_unregistered(self.link.clone());
             }
             other => log::error!("Unimplemented message: {:?}", other),
         }
@@ -99,8 +103,7 @@ impl Component for Model {
             <div id="everything">
                 <div id="sidebar" class="maincolumns">
                     <div id="pidbuttons">
-                        <RouterButton<AppRoute> route=AppRoute::CreateFdo>{ "Register" }</RouterButton<AppRoute>>
-                        <RouterButton<AppRoute> route=AppRoute::CreateCollection>{ "Collection" }</RouterButton<AppRoute>>
+                        <button onclick=self.link.callback(|_| Msg::AddDefaultItem)>{ "Add" }</button>
                         <RouterButton<AppRoute> route=AppRoute::Search>{ "Search" }</RouterButton<AppRoute>>
                     </div>
                     <div id="workspace" class="scroll-vertical">

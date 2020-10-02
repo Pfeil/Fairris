@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 
-use super::{PidInfo, Model};
+use super::{Model, PidInfo};
 use crate::service_communication::primitive_types::Pid;
 
+use rand::prelude::*;
 use yew::prelude::*;
-
 
 #[derive(Default)]
 pub struct KnownPids {
@@ -15,6 +15,23 @@ pub struct KnownPids {
 impl KnownPids {
     pub fn find(&self, pid: &str) -> Option<&PidInfo> {
         self.known_pids.get(pid.into())
+    }
+
+    pub fn add_unregistered(&mut self, model_link: ComponentLink<Model>) -> Pid {
+        let mut object = PidInfo::default(model_link);
+        let pid: String;
+        loop {
+            let random_number = rand::thread_rng().gen::<u16>();
+            let maybe_pid = format!("unregistered-{}", random_number);
+            if !self.known_pids.contains_key(&maybe_pid) {
+                pid = maybe_pid;
+                let obj_pid = object.pid_mut();
+                *obj_pid = pid.clone();
+                break;
+            }
+        }
+        self.known_pids.insert(pid.clone(), object);
+        pid
     }
 }
 
