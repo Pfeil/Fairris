@@ -96,7 +96,7 @@ impl Component for Model {
                         )
                 }
                 AppRoute::Search => html! {<SearchComponent/>},
-                AppRoute::Index => html! {<CreateComponent model_link=model_link.clone() />},
+                AppRoute::Index => Self::view_welcome_page(),
             }
         };
         html! {
@@ -112,6 +112,23 @@ impl Component for Model {
                 </div>
                 <Router<AppRoute, ()> render = Router::render(router_function)
                 />
+            </div>
+        }
+    }
+}
+
+impl Model {
+    fn view_welcome_page() -> Html {
+        html! {
+            <div>
+            <h1>{"Welcome to Fairris"}</h1>
+            <p>{"
+                Fairris show the FAIR digital object ecosystem (the testbed) from a user perspective. 
+                Imagine this user interface to be a digital lab notebook, workflow system or IDE, depending on your needs. 
+                It will help you to manage and register your research data and may automate a lot of your work.
+            "}</p>
+            <p>{"TODO: Add understandable introduction, tell the user that he may play around."}</p>
+            <p>{"TODO: Style this welcome page with CSS."}</p>
             </div>
         }
     }
