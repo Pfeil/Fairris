@@ -17,6 +17,10 @@ impl KnownPids {
         self.known_pids.get(pid.into())
     }
 
+    pub fn find_mut(&mut self, pid: &str) -> Option<&mut PidInfo> {
+        self.known_pids.get_mut(pid.into())
+    }
+
     pub fn add_unregistered(&mut self, model_link: ComponentLink<Model>) -> Pid {
         let mut object = PidInfo::default(model_link);
         let pid: String;

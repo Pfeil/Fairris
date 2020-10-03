@@ -47,6 +47,10 @@ impl PidInfo {
         }
     }
 
+    pub fn state(&self) -> State {
+        self.state.clone()
+    }
+
     pub fn state_mut(&mut self) -> &mut State {
         &mut self.state
     }
@@ -57,6 +61,10 @@ impl PidInfo {
 
     pub fn pid_mut(&mut self) -> &mut String {
         &mut self.record.pid
+    }
+
+    pub fn describe(&self) -> String {
+        self.record.describe()
     }
 
     pub fn view_as_list_item(&self) -> Html {
@@ -74,28 +82,7 @@ impl PidInfo {
         }
     }
 
-    pub fn view_as_details_page(&self) -> Html {
-        html! {
-            <div id="content" class="maincolumns scroll-vertical">
-                <div class="two-column-lefty">
-                    <div class="image-placeholder"><p>{ "IMAGE" }</p></div>
-                    <div class="two-column-lefty">
-                        <p class="align-right">{ "PID:" }</p>
-                        <p>{ self.record.pid.as_str() }</p>
-                        <p class="align-right">{ "Description:" }</p>
-                        <p>{ self.record.describe() }</p>
-                        <p class="align-right">{ "Status:" }</p>
-                        <p>{ format!("{:?}", self.state) }</p>
-                    </div>
-                </div>
-                <div class="two-column-lefty">{ self.view_record() }</div>
-                <div class="fdo-actions"><p>{ "Placeholder for Action Buttons here." }</p></div>
-                <div class="action-placeholder"><p>{ "Placeholder for action visualization. This could be i.e. viewing raw metadata, visualizations, or the possibility to update your FDO." }</p></div>
-            </div>
-        }
-    }
-
-    fn view_record(&self) -> Html {
+    pub fn view_record(&self) -> Html {
         self.record
             .entries
             .keys()

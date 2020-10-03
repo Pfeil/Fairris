@@ -1,6 +1,7 @@
 #![recursion_limit = "1024"]
 
 mod create_component;
+mod details_page;
 mod known_pids;
 mod pidinfo;
 mod search_component;
@@ -9,6 +10,7 @@ mod service_communication;
 use std::{cell::RefCell, rc::Rc};
 
 use create_component::CreateComponent;
+use details_page::DetailsPage;
 use known_pids::*;
 use pidinfo::PidInfo;
 use search_component::SearchComponent;
@@ -22,10 +24,6 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[derive(Switch, Debug, Clone)]
 pub enum AppRoute {
-    #[to = "/createObject"]
-    CreateFdo,
-    #[to = "/createCollection"]
-    CreateCollection,
     #[to = "/fdo/{*:path}"]
     Details { path: String },
     #[to = "/search"]
@@ -43,6 +41,7 @@ pub struct Model {
 pub enum Msg {
     AddDefaultItem,
     AddPidItem(PidInfo),
+    UpdatePidItem(PidInfo),
     Remove(String),
     Error(String),
 }
@@ -70,7 +69,10 @@ impl Component for Model {
             Msg::AddDefaultItem => {
                 self.known_pids.borrow_mut().add_unregistered(self.link.clone());
             }
-            other => log::error!("Unimplemented message: {:?}", other),
+            Msg::UpdatePidItem(item) => {
+                self.known_pids.borrow_mut().find_mut(item.pid()).and_then(|found| Some(*found = item) );
+            }
+            Msg::Error(issue) => log::error!("Something went wrong: {}", issue),
         }
         true
     }
@@ -85,14 +87,14 @@ impl Component for Model {
         let known_pids = self.known_pids.clone();
         let model_link = self.link.clone();
         let router_function = move |switch: AppRoute| match switch {
-                AppRoute::CreateFdo => html! {<CreateComponent model_link=model_link.clone() />},
-                AppRoute::CreateCollection => html! {},
             AppRoute::Details { ref path } => known_pids.borrow().find(path).map_or_else(
                 || Self::view_record_not_found_page(path),
-                |item| item.view_as_details_page(),
+                |item| {
+                    html! {<DetailsPage model_link=model_link.clone() record=item.clone() />}
+                },
             ),
-                AppRoute::Search => html! {<SearchComponent/>},
-                AppRoute::Index => Self::view_welcome_page(),
+            AppRoute::Search => html! {<SearchComponent/>},
+            AppRoute::Index => Self::view_welcome_page(),
         };
         html! {
             <div id="everything">

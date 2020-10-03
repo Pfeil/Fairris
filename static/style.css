@@ -2,7 +2,8 @@
     /* COLOR PALETTE */
     --color-bright1: white;
     --color-dark1: #272B30;
-    --color-ok: #649242;
+    --color-ok: #699a46;
+    --color-abort: #c66262;
     
     --color-bg-content: var(--color-bright1);
     --color-bg-sidebar: var(--color-dark1);
@@ -85,10 +86,19 @@ p {
     width: 100%;
 }
 
-.okbutton {
+.ok-button {
     font-size: larger;
     background-color: var(--color-ok);
     border-color: var(--color-ok);
+    color: white;
+    margin-top: 2em;
+    padding: 0.3em;
+}
+
+.edit-button {
+    font-size: larger;
+    background-color: var(--color-abort);
+    border-color: var(--color-abort);
     color: white;
     margin-top: 2em;
     padding: 0.3em;
