@@ -6,6 +6,7 @@ mod known_pids;
 mod pidinfo;
 mod search_component;
 mod service_communication;
+mod data_type_registry;
 
 use std::{cell::RefCell, rc::Rc};
 

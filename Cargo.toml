@@ -26,5 +26,7 @@ chrono = { version = "0.4", features = ["serde", "wasmbind"] }
 
 rand = { version = "0.7", features = ["wasm-bindgen"] }
 wee_alloc = "0.4"
+enum-iterator = "*"
+
 log = "0.4"
 wasm-logger = "0.2"

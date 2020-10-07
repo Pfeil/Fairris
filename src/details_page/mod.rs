@@ -1,23 +1,26 @@
 mod edit_button;
 mod form_switch;
+mod profile_selector;
 mod publish_button;
 
 use edit_button::*;
 use form_switch::*;
+use profile_selector::*;
 use publish_button::*;
 
 use yew::prelude::*;
 
-use crate::{Model, pidinfo::PidInfo, pidinfo::State};
+use crate::{
+    data_type_registry::{Pid, Profile},
+    pidinfo::{PidInfo, State},
+    Model,
+};
 
 pub struct DetailsPage {
     link: ComponentLink<Self>,
     props: Props,
 
     edit_mode: bool,
-
-    // TODO store in PidInfo? (available in Props)
-    object_type: FormType,
 }
 
 #[derive(Properties, Clone)]
@@ -31,8 +34,10 @@ pub struct Props {
 #[derive(Debug)]
 pub enum Msg {
     ToggleEditMode,
-    FormTypeChanged(FormType),
     Publish,
+
+    FormTypeChanged(FormType),
+    ProfileChanged(Result<Profile, Pid>),
 }
 
 impl Component for DetailsPage {
@@ -44,7 +49,6 @@ impl Component for DetailsPage {
             link,
             props,
             edit_mode: false,
-            object_type: FormType::Data,
         };
         new_self.reset_page_state();
         new_self
@@ -66,8 +70,8 @@ impl Component for DetailsPage {
                 // the properties might be partially or fully inactive.
                 // Is the FormType not actually the digitalObjectType of the Profile?
                 // Or is it the profile itself?
-                self.object_type = ft
-            },
+                //self.object_type = ft
+            }
             Msg::Publish => {
                 match self.props.record.state() {
                     State::Clean => log::error!("Status is clean. This should not happen."),
@@ -75,13 +79,16 @@ impl Component for DetailsPage {
                         // 0. send update request to PIT service
                         // 1. pid will stay the same -> update item in Model
                         log::error!("UNIMPLEMENTED!")
-                    },
+                    }
                     State::Unregistered => {
                         // 0. send create request to PIT service
                         // 1. pid (dummy) will change -> add new, remove old item in Model
                         log::error!("UNIMPLEMENTED!")
-                    },
+                    }
                 }
+            }
+            Msg::ProfileChanged(maybe_profile) => {
+                // TODO need to store it within the PidInfo!
             }
         }
         true
@@ -114,7 +121,7 @@ impl Component for DetailsPage {
                 <div class="two-column-lefty">{ data.view_record() }</div>
                 <EditButton form_link=self.link.clone() edit_mode=self.edit_mode />
                 <PublishButton form_link=self.link.clone() edit_mode=self.edit_mode state=self.props.record.state() />
-                <FormSwitch form_link=self.link.clone() active=self.edit_mode />
+                <ProfileSelector form_link=self.link.clone() active=self.edit_mode />
                 <EditButton form_link=self.link.clone() edit_mode=self.edit_mode />
                 <PublishButton form_link=self.link.clone() edit_mode=self.edit_mode state=self.props.record.state() />
             </div>
