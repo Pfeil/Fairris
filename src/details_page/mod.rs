@@ -1,10 +1,10 @@
-mod digital_object_type_selector;
+mod type_selector;
 mod edit_button;
 mod profile_selector;
 mod publish_button;
 mod locations_list;
 
-use digital_object_type_selector::*;
+use type_selector::*;
 use edit_button::*;
 use profile_selector::*;
 use publish_button::*;
