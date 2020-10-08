@@ -2,13 +2,15 @@
 mod macros;
 mod kernel_information_profile;
 mod digital_object_type;
+mod digital_object_locations;
 
 use std::{fmt::Display, ops::{Deref, DerefMut}};
 
 pub use kernel_information_profile::*;
 pub use digital_object_type::*;
+pub use digital_object_locations::*;
 
-trait HasProfileKey {
+pub trait HasProfileKey {
     /// Associates key-PID to a type.
     fn get_key() -> Pid;
     /// Associates key-name to a type.
