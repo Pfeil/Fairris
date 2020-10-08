@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use enum_iterator::IntoEnumIterator;
 use yew::prelude::*;
 
-use crate::data_type_registry::{Profile, Pid};
+use crate::data_type_registry::{HasProfileKey, Pid, Profile};
 
 use super::DetailsPage;
 
@@ -51,10 +51,11 @@ impl Component for ProfileSelector {
     }
 
     fn view(&self) -> Html {
+        let name = Profile::get_key_name();
         html! {
             <>
-                <label class="form-description" for="profile-select">{ "Profile:" }</label>
-                <select class="form-input" id="profile-select" required=true disabled=!self.props.active
+                <label class="form-description" for=name>{ name }</label>
+                <select class="form-input" id=name required=true disabled=!self.props.active
                         onchange=self.link.callback(|e: ChangeData| match e {
                             ChangeData::Select(element) => Msg::Value(element.value()),
                             other => Msg::Error(format!("Got unexpected: {:?}", other))

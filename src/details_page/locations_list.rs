@@ -47,10 +47,11 @@ impl Component for LocationsList {
     }
 
     fn view(&self) -> Html {
+        let name = Locations::get_key_name();
         html! {
             <>
-                <label class="form-description" for=Locations::get_key_name()>{ Locations }</label>
-                <textarea class="form-input" id=Locations::get_key_name() disabled=!self.props.active
+                <label class="form-description" for=name>{ name }</label>
+                <textarea class="form-input" id=name disabled=!self.props.active
                     onchange=self.link.callback(|e: ChangeData| match e {
                         ChangeData::Value(element) => {
                             let urls: Vec<String> = element.split("\n").map(|str| str.to_owned()).collect();

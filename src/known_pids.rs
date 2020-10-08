@@ -40,6 +40,7 @@ impl KnownPids {
 }
 
 impl KnownPids {
+    #[allow(dead_code)]
     pub fn with_dummy(model_link: ComponentLink<Model>) -> Self {
         log::info!("Will insert some dummy Pid objects for testing.");
         let dummy_prefix = "kitdm/dummy";
