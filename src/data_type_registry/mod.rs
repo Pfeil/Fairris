@@ -7,7 +7,9 @@ pub use kernel_information_profile::*;
 pub use digital_object_type::*;
 
 trait HasProfileKey {
+    /// Associates key-PID to a type.
     fn get_key() -> Pid;
+    /// Associates key-name to a type.
     fn get_key_name() -> &'static str;
 }
 
@@ -29,6 +31,6 @@ impl DerefMut for Pid {
 
 impl Display for Pid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", self.0.as_str())
     }
 }

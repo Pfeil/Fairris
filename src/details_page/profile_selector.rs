@@ -60,11 +60,11 @@ impl Component for ProfileSelector {
                             other => Msg::Error(format!("Got unexpected: {:?}", other))
                         })>
                     {
-                        Profile::into_enum_iter()
+                        for Profile::into_enum_iter()
                             .map(|p: Profile| {
-                                html! { <option value=Pid::from(p).to_string()>{ p }</option> }
+                                let pid = Pid::from(p);
+                                html! { <option value=pid>{ p }</option> }
                             })
-                            .collect::<Html>()
                     }
                 </select>
             </>
