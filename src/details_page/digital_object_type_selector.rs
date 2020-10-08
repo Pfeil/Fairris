@@ -1,8 +1,13 @@
+use std::convert::TryFrom;
+
+use enum_iterator::IntoEnumIterator;
 use yew::prelude::*;
+
+use crate::data_type_registry::{DigitalObjectType, Pid};
 
 use super::DetailsPage;
 
-pub struct FormSwitch {
+pub struct DigitalObjectTypeSelector {
     link: ComponentLink<Self>,
     props: Props,
 }
@@ -14,19 +19,12 @@ pub struct Props {
 }
 
 #[derive(Debug)]
-pub enum FormType {
-    Collection = 0,
-    Data = 1,
-    Raw = 2,
-}
-
-#[derive(Debug)]
 pub enum Msg {
     Value(String),
     Error(String),
 }
 
-impl Component for FormSwitch {
+impl Component for DigitalObjectTypeSelector {
     type Message = Msg;
     type Properties = Props;
 
@@ -37,8 +35,10 @@ impl Component for FormSwitch {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::Value(value) => {
-                let change: FormType = value.into();
-                self.props.form_link.send_message(super::Msg::FormTypeChanged(change));
+                let changed = DigitalObjectType::try_from(&Pid(value));
+                self.props
+                    .form_link
+                    .send_message(super::Msg::DigitalObjectTypeChanged(changed));
             }
             other => log::error!("Message not handled: {:?}", other),
         }
@@ -53,31 +53,21 @@ impl Component for FormSwitch {
     fn view(&self) -> Html {
         html! {
             <>
-                <label class="form-description" for="profile-select">{ "Profile:" }</label>
+                <label class="form-description" for="profile-select">{ "DigitalObjectType:" }</label>
                 <select class="form-input" id="profile-select" required=true disabled=!self.props.active
                         onchange=self.link.callback(|e: ChangeData| match e {
                             ChangeData::Select(element) => Msg::Value(element.value()),
                             other => Msg::Error(format!("Got unexpected: {:?}", other))
                         })>
-                    <option value="collection">{ "Collection" }</option>
-                    <option value="data">{ "Data" }</option>
-                    <option value="raw">{ "Raw Profile Form" }</option>
+                    {
+                        for DigitalObjectType::into_enum_iter()
+                            .map(|t: DigitalObjectType| {
+                                let pid = Pid::from(t);
+                                html! { <option value=pid>{ t }</option> }
+                            })
+                    }
                 </select>
             </>
-        }
-    }
-}
-
-impl From<String> for FormType {
-    fn from(s: String) -> Self {
-        match s.to_lowercase().as_str() {
-            "collection" => FormType::Collection,
-            "data" => FormType::Data,
-            "raw" => FormType::Raw,
-            _ => {
-                log::error!("Got unexpected form: {}", s);
-                FormType::Raw
-            },
         }
     }
 }

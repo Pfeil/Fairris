@@ -1,3 +1,5 @@
+#[macro_use]
+mod macros;
 mod kernel_information_profile;
 mod digital_object_type;
 

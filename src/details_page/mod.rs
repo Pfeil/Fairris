@@ -1,17 +1,17 @@
+mod digital_object_type_selector;
 mod edit_button;
-mod form_switch;
 mod profile_selector;
 mod publish_button;
 
+use digital_object_type_selector::*;
 use edit_button::*;
-use form_switch::*;
 use profile_selector::*;
 use publish_button::*;
 
 use yew::prelude::*;
 
 use crate::{
-    data_type_registry::{Pid, Profile},
+    data_type_registry::{DigitalObjectType, Pid, Profile},
     pidinfo::{PidInfo, State},
     Model,
 };
@@ -36,8 +36,8 @@ pub enum Msg {
     ToggleEditMode,
     Publish,
 
-    FormTypeChanged(FormType),
     ProfileChanged(Result<Profile, Pid>),
+    DigitalObjectTypeChanged(Result<DigitalObjectType, Pid>),
 }
 
 impl Component for DetailsPage {
@@ -65,29 +65,25 @@ impl Component for DetailsPage {
                         .send_message(super::Msg::UpdatePidItem(self.props.record.clone()))
                 }
             }
-            Msg::FormTypeChanged(ft) => {
-                // TODO what do we do if the form type is changed?
-                // the properties might be partially or fully inactive.
-                // Is the FormType not actually the digitalObjectType of the Profile?
-                // Or is it the profile itself?
-                //self.object_type = ft
-            }
             Msg::Publish => {
                 match self.props.record.state() {
                     State::Clean => log::error!("Status is clean. This should not happen."),
                     State::Modified => {
-                        // 0. send update request to PIT service
-                        // 1. pid will stay the same -> update item in Model
+                        // TODO 0. send update request to PIT service
+                        // TODO 1. pid will stay the same -> update item in Model
                         log::error!("UNIMPLEMENTED!")
                     }
                     State::Unregistered => {
-                        // 0. send create request to PIT service
-                        // 1. pid (dummy) will change -> add new, remove old item in Model
+                        // TODO 0. send create request to PIT service
+                        // TODO 1. pid (dummy) will change -> add new, remove old item in Model
                         log::error!("UNIMPLEMENTED!")
                     }
                 }
             }
             Msg::ProfileChanged(maybe_profile) => {
+                // TODO need to store it within the PidInfo!
+            }
+            Msg::DigitalObjectTypeChanged(maybe_type) => {
                 // TODO need to store it within the PidInfo!
             }
         }
@@ -121,7 +117,10 @@ impl Component for DetailsPage {
                 <div class="two-column-lefty">{ data.view_record() }</div>
                 <EditButton form_link=self.link.clone() edit_mode=self.edit_mode />
                 <PublishButton form_link=self.link.clone() edit_mode=self.edit_mode state=self.props.record.state() />
+                
                 <ProfileSelector form_link=self.link.clone() active=self.edit_mode />
+                <DigitalObjectTypeSelector form_link=self.link.clone() active=self.edit_mode />
+
                 <EditButton form_link=self.link.clone() edit_mode=self.edit_mode />
                 <PublishButton form_link=self.link.clone() edit_mode=self.edit_mode state=self.props.record.state() />
             </div>

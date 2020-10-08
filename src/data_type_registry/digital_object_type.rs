@@ -1,3 +1,5 @@
+use std::{convert::TryFrom, fmt::Display};
+
 use super::{HasProfileKey, Pid};
 use enum_iterator::IntoEnumIterator;
 
@@ -21,6 +23,37 @@ pub enum DigitalObjectType {
     Annotations,
 }
 
+/// Associates types with their PID.
+/// FIXME PIDs are not yet correct as they do not yet exist.
+impl From<DigitalObjectType> for Pid {
+    fn from(p: DigitalObjectType) -> Self {
+        match p {
+            DigitalObjectType::Publication => Pid(r#"21.T11148/Publication"#.into()),
+            DigitalObjectType::Paper => Pid(r#"21.T11148/Paper"#.into()),
+            DigitalObjectType::Algorithm => Pid(r#"21.T11148/Algorithm"#.into()),
+            DigitalObjectType::Application => Pid(r#"21.T11148/Application"#.into()),
+            DigitalObjectType::Manuscript => Pid(r#"21.T11148/Manuscript"#.into()),
+            DigitalObjectType::ManuscriptPage => Pid(r#"21.T11148/ManuscriptPage"#.into()),
+            DigitalObjectType::Annotations => Pid(r#"21.T11148/Annotations"#.into()),
+        }
+    }
+}
+
+/// Associates profiles with their Display name (for the user interface).
+impl Display for DigitalObjectType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DigitalObjectType::Publication => {write!(f, "Publication")}
+            DigitalObjectType::Paper => {write!(f, "Paper")}
+            DigitalObjectType::Algorithm => {write!(f, "Algorithm")}
+            DigitalObjectType::Application => {write!(f, "Application")}
+            DigitalObjectType::Manuscript => {write!(f, "Manuscript")}
+            DigitalObjectType::ManuscriptPage => {write!(f, "ManuscriptPage")}
+            DigitalObjectType::Annotations => {write!(f, "Annotations")}
+        }
+    }
+}
+
 impl HasProfileKey for DigitalObjectType {
     fn get_key() -> Pid {
         Pid("21.T11148/c83481d4bf467110e7c9".into())
@@ -31,19 +64,4 @@ impl HasProfileKey for DigitalObjectType {
     }
 }
 
-/// Associates types with their PID.
-/// FIXME PIDs are not yet correct as they do not yet exist.
-impl From<DigitalObjectType> for Pid {
-    fn from(p: DigitalObjectType) -> Self {
-        match p {
-            DigitalObjectType::Publication => Pid(r#"21.T11148/61fd3446879407065218"#.into()),
-            DigitalObjectType::Paper => Pid(r#"21.T11148/61fd3446879407065218"#.into()),
-            DigitalObjectType::Algorithm => Pid(r#"21.T11148/61fd3446879407065218"#.into()),
-            DigitalObjectType::Application => Pid(r#"21.T11148/61fd3446879407065218"#.into()),
-            DigitalObjectType::Manuscript => Pid(r#"21.T11148/61fd3446879407065218"#.into()),
-            DigitalObjectType::ManuscriptPage => Pid(r#"21.T11148/61fd3446879407065218"#.into()),
-            DigitalObjectType::Annotations => Pid(r#"21.T11148/61fd3446879407065218"#.into()),
-            // IMPORTANT: DO NOT DO A CATCH-ALL CASE HERE!
-        }
-    }
-}
+try_from_pid!(DigitalObjectType, Pid);

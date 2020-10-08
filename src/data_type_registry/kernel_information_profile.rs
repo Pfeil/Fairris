@@ -31,7 +31,7 @@ impl From<Profile> for Pid {
 impl Display for Profile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Profile::Testbed => {write!(f, "Testbed")},
+            Profile::Testbed => write!(f, "Testbed"),
         }
     }
 }
@@ -45,24 +45,7 @@ impl HasProfileKey for Profile {
     }
 }
 
-/// Error contains a copy of the given pid for later handling.
-/// This makes sense as it is not unlikely that the PID is valid, but
-/// can not be handled by the client. Err is in this case a marker for
-/// i.e. the UI that this PID can be displayed, but can not be operated on.
-impl TryFrom<&Pid> for Profile {
-    type Error = Pid;
-
-    fn try_from(pid: &Pid) -> Result<Self, Self::Error> {
-        Profile::into_enum_iter() // iterate over every profile
-            .map(|p: Profile| {
-                // assiociate them with their PID
-                (Pid::from(p), p)
-            })
-            .find(|(p_pid, _)| pid == p_pid) // find the pid
-            .map(|(_, p)| p) // get profile
-            .ok_or(pid.clone()) // return pid on error
-    }
-}
+try_from_pid!(Profile, Pid);
 
 /// Err(None) -> no PID found
 /// Err(Some(pid)) -> unknown PID found
