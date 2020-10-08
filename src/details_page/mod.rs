@@ -3,12 +3,14 @@ mod edit_button;
 mod profile_selector;
 mod publish_button;
 mod locations_list;
+mod version_input;
 
 use type_selector::*;
 use edit_button::*;
 use profile_selector::*;
 use publish_button::*;
 use locations_list::*;
+use version_input::*;
 
 use yew::prelude::*;
 
@@ -41,6 +43,7 @@ pub enum Msg {
     ProfileChanged(Result<Profile, Pid>),
     DigitalObjectTypeChanged(Result<DigitalObjectType, Pid>),
     LocationsChanged(Vec<String>),
+    VersionChanged(String),
 }
 
 impl Component for DetailsPage {
@@ -92,6 +95,9 @@ impl Component for DetailsPage {
             Msg::LocationsChanged(_) => {
                 // TODO need to store it within the PidInfo!
             }
+            Msg::VersionChanged(_) => {
+                // TODO need to store it within the PidInfo!
+            }
         }
         true
     }
@@ -127,6 +133,11 @@ impl Component for DetailsPage {
                 <ProfileSelector form_link=self.link.clone() active=self.edit_mode />
                 <DigitalObjectTypeSelector form_link=self.link.clone() active=self.edit_mode />
                 <LocationsList form_link=self.link.clone() active=self.edit_mode />
+                // TODO policy
+                // TODO etag
+                // TODO dateCreated
+                // TODO dateModified
+                <VersionInput form_link=self.link.clone() active=self.edit_mode />
 
                 <EditButton form_link=self.link.clone() edit_mode=self.edit_mode />
                 <PublishButton form_link=self.link.clone() edit_mode=self.edit_mode state=self.props.record.state() />

@@ -3,12 +3,14 @@ mod macros;
 mod profile;
 mod r#type;
 mod locations;
+mod version;
 
 use std::{fmt::Display, ops::{Deref, DerefMut}};
 
 pub use profile::*;
 pub use r#type::*;
 pub use locations::*;
+pub use version::*;
 
 pub trait HasProfileKey {
     /// Associates key-PID to a type.
