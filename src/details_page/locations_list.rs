@@ -34,7 +34,7 @@ impl Component for LocationsList {
             Msg::Value(urls) => {
                 self.props
                     .form_link
-                    .send_message(super::Msg::LocationsChanged(urls));
+                    .send_message(super::Msg::LocationsChanged(Locations(urls)));
             }
             other => log::error!("Message not handled: {:?}", other),
         }

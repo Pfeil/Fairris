@@ -31,10 +31,10 @@ impl Component for VersionInput {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Msg::Value(versionstring) => {
+            Msg::Value(string) => {
                 self.props
                     .form_link
-                    .send_message(super::Msg::VersionChanged(versionstring));
+                    .send_message(super::Msg::VersionChanged(Version(string)));
             }
             other => log::error!("Message not handled: {:?}", other),
         }

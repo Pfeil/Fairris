@@ -1,7 +1,10 @@
 use std::{convert::TryFrom, fmt::Display};
 
+use serde_json as json;
+
 use super::{HasProfileKey, Pid};
 use enum_iterator::IntoEnumIterator;
+use crate::service_communication::{pit_record::PidRecordEntry, PidRecord};
 
 #[derive(Clone, Copy, Debug, IntoEnumIterator, PartialEq)]
 pub enum DigitalObjectType {
@@ -22,6 +25,8 @@ pub enum DigitalObjectType {
     // might be a collection (api) item.
     Annotations,
 }
+
+pub type MaybeDOType = Result<DigitalObjectType, Option<Pid>>;
 
 /// Associates types with their PID.
 /// FIXME PIDs are not yet correct as they do not yet exist.
@@ -64,4 +69,10 @@ impl HasProfileKey for DigitalObjectType {
     }
 }
 
-try_from_pid!(DigitalObjectType, Pid);
+impl Default for DigitalObjectType {
+    fn default() -> Self {
+        DigitalObjectType::ManuscriptPage
+    }
+}
+
+try_from_all!(DigitalObjectType, Pid);

@@ -13,10 +13,12 @@ use super::{HasProfileKey, Pid};
 /// - the Display::fmt() implementation to associate a human readable name for the UI.
 ///
 /// Fortunately, the compiler will remember you to do so.
-#[derive(Clone, Copy, Debug, IntoEnumIterator, PartialEq)]
+#[derive(Clone, Copy, Debug, IntoEnumIterator, PartialEq, Eq)]
 pub enum Profile {
     Testbed,
 }
+
+pub type MaybeProfile = Result<Profile, Option<Pid>>;
 
 /// Associates profiles with their PID.
 impl From<Profile> for Pid {
@@ -45,41 +47,13 @@ impl HasProfileKey for Profile {
     }
 }
 
-try_from_pid!(Profile, Pid);
-
-/// Err(None) -> no PID found
-/// Err(Some(pid)) -> unknown PID found
-impl TryFrom<&PidRecordEntry> for Profile {
-    type Error = Option<Pid>;
-
-    fn try_from(entry: &PidRecordEntry) -> Result<Self, Self::Error> {
-        if entry.key != *Profile::get_key() {
-            return Err(None);
-        }
-        if let json::Value::String(s) = &entry.value {
-            let pid: Pid = Pid(s.clone());
-            Profile::try_from(&pid).map_err(|e| Some(e))
-        } else {
-            Err(None)
-        }
+impl Default for Profile {
+    fn default() -> Self {
+        Profile::Testbed
     }
 }
 
-/// Err(None) -> no PID found
-/// Err(Some(pid)) -> unknown PID found
-impl TryFrom<&mut PidRecord> for Profile {
-    type Error = Option<Pid>;
-
-    fn try_from(record: &mut PidRecord) -> Result<Self, Self::Error> {
-        record
-            .entries
-            .get(&*Profile::get_key())
-            .map(|list| list.get(0))
-            .flatten()
-            .ok_or(Self::Error::None)
-            .and_then(|entry| Profile::try_from(entry))
-    }
-}
+try_from_all!(Profile, Pid);
 
 #[cfg(test)]
 mod tests {

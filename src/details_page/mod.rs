@@ -1,3 +1,4 @@
+mod helpers;
 mod type_selector;
 mod edit_button;
 mod profile_selector;
@@ -14,11 +15,7 @@ use version_input::*;
 
 use yew::prelude::*;
 
-use crate::{
-    data_type_registry::{DigitalObjectType, Pid, Profile},
-    pidinfo::{PidInfo, State},
-    Model,
-};
+use crate::{Model, data_type_registry::{DigitalObjectType, Locations, Pid, Profile, Version}, pidinfo::{PidInfo, State}};
 
 pub struct DetailsPage {
     link: ComponentLink<Self>,
@@ -42,8 +39,8 @@ pub enum Msg {
 
     ProfileChanged(Result<Profile, Pid>),
     DigitalObjectTypeChanged(Result<DigitalObjectType, Pid>),
-    LocationsChanged(Vec<String>),
-    VersionChanged(String),
+    LocationsChanged(Locations),
+    VersionChanged(Version),
 }
 
 impl Component for DetailsPage {
@@ -86,17 +83,17 @@ impl Component for DetailsPage {
                     }
                 }
             }
-            Msg::ProfileChanged(_) => {
-                // TODO need to store it within the PidInfo!
+            Msg::ProfileChanged(p) => {
+                self.props.record.profile = p.map_err(|e| Some(e));
             }
-            Msg::DigitalObjectTypeChanged(_) => {
-                // TODO need to store it within the PidInfo!
+            Msg::DigitalObjectTypeChanged(t) => {
+                self.props.record.digital_object_type = t.map_err(|e| Some(e));
             }
-            Msg::LocationsChanged(_) => {
-                // TODO need to store it within the PidInfo!
+            Msg::LocationsChanged(l) => {
+                self.props.record.locations = l;
             }
-            Msg::VersionChanged(_) => {
-                // TODO need to store it within the PidInfo!
+            Msg::VersionChanged(v) => {
+                self.props.record.version = v;
             }
         }
         true
@@ -111,8 +108,10 @@ impl Component for DetailsPage {
         changed
     }
 
+    #[allow(unused_must_use)]
     fn view(&self) -> yew::Html {
         let data = &self.props.record;
+        let digital_object_type = self.props.record.digital_object_type.clone();
         html! {
             <div id="content" class="maincolumns scroll-vertical">
                 <div class="two-column-lefty">
@@ -131,7 +130,7 @@ impl Component for DetailsPage {
                 <PublishButton form_link=self.link.clone() edit_mode=self.edit_mode state=self.props.record.state() />
                 
                 <ProfileSelector form_link=self.link.clone() active=self.edit_mode />
-                <DigitalObjectTypeSelector form_link=self.link.clone() active=self.edit_mode />
+                <DigitalObjectTypeSelector form_link=self.link.clone() active=self.edit_mode maybe_type=digital_object_type/>
                 <LocationsList form_link=self.link.clone() active=self.edit_mode />
                 // TODO policy
                 // TODO etag

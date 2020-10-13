@@ -25,3 +25,55 @@ macro_rules! try_from_pid {
         }
     }
 }
+
+macro_rules! try_from_entry {
+    ( $given_type:tt, $error_type:tt ) => {
+        /// Err(None) -> no PID found
+        /// Err(Some(pid)) -> unknown PID found
+        impl TryFrom<&PidRecordEntry> for $given_type {
+            type Error = Option<$error_type>;
+
+            fn try_from(entry: &PidRecordEntry) -> Result<Self, Self::Error> {
+                if entry.key != *$given_type::get_key() {
+                    return Err(None);
+                }
+                if let json::Value::String(s) = &entry.value {
+                    let pid: Pid = Pid(s.clone());
+                    $given_type::try_from(&pid).map_err(|e| Some(e))
+                } else {
+                    Err(None)
+                }
+            }
+        }
+    }
+}
+
+macro_rules! try_from_record {
+    ( $given_type:tt, $error_type:tt ) => {
+        /// Err(None) -> no PID found
+        /// Err(Some(pid)) -> unknown PID found
+        impl TryFrom<&PidRecord> for $given_type {
+            type Error = Option<$error_type>;
+
+            fn try_from(record: &PidRecord) -> Result<Self, Self::Error> {
+                record
+                    .entries
+                    .get(&*$given_type::get_key())
+                    .map(|list| list.get(0))
+                    .flatten()
+                    .ok_or(Self::Error::None)
+                    .and_then(|entry| $given_type::try_from(entry))
+            }
+        }
+    }
+}
+
+macro_rules! try_from_all {
+    ( $given_type:tt, $error_type:tt ) => {
+        
+        try_from_pid!($given_type, $error_type);
+        try_from_entry!($given_type, $error_type);
+        try_from_record!($given_type, $error_type);
+        
+    }
+}
