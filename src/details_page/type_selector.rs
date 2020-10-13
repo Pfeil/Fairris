@@ -1,11 +1,12 @@
 use std::convert::TryFrom;
 
 use enum_iterator::IntoEnumIterator;
+use web_sys::HtmlSelectElement;
 use yew::prelude::*;
 
 use crate::data_type_registry::*;
 
-use super::DetailsPage;
+use super::{helpers::DOM, DetailsPage};
 
 pub struct DigitalObjectTypeSelector {
     link: ComponentLink<Self>,
@@ -16,6 +17,7 @@ pub struct DigitalObjectTypeSelector {
 pub struct Props {
     pub active: bool,
     pub form_link: ComponentLink<DetailsPage>,
+    pub maybe_type: MaybeDOType,
 }
 
 #[derive(Debug)]
@@ -46,7 +48,9 @@ impl Component for DigitalObjectTypeSelector {
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        self.props = props;
+        self.props = props.clone();
+        let x = DOM::get_element::<HtmlSelectElement, _>(DigitalObjectType::get_key_name());
+        props.maybe_type.map(|t| x.set_value(&*Pid::from(t)));
         true
     }
 
@@ -63,8 +67,12 @@ impl Component for DigitalObjectTypeSelector {
                     {
                         for DigitalObjectType::into_enum_iter()
                             .map(|t: DigitalObjectType| {
+                                let selected: bool = self.props.maybe_type
+                                    .as_ref()
+                                    .map(|this| *this == t)
+                                    .unwrap_or(false);
                                 let pid = Pid::from(t);
-                                html! { <option value=pid>{ t }</option> }
+                                html! { <option value=pid selected=selected>{ t }</option> }
                             })
                     }
                 </select>

@@ -136,6 +136,7 @@ dependencies = [
  "serde_json",
  "wasm-bindgen",
  "wasm-logger",
+ "web-sys",
  "wee_alloc",
  "yew",
  "yew-router",
