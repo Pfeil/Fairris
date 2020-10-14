@@ -21,8 +21,9 @@ pub struct PidInfo {
     pub profile: MaybeProfile,
     pub digital_object_type: MaybeDOType,
     pub locations: Locations,
-    pub version: Version,
+    pub etag: Etag,
     pub policy: Policy,
+    pub version: Version,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -41,8 +42,9 @@ impl PidInfo {
             profile: Ok(Profile::default()),
             digital_object_type: Ok(DigitalObjectType::default()),
             locations: Locations::default(),
-            version: Version::default(),
+            etag: Etag::default(),
             policy: Policy::default(),
+            version: Version::default(),
         }
     }
 
@@ -62,8 +64,9 @@ impl PidInfo {
         let profile: MaybeProfile = Profile::try_from(&record);
         let digital_object_type = DigitalObjectType::try_from(&record);
         let locations = Locations::from(&record);
-        let version = Version::from(&record);
+        let etag = Etag::from(&record);
         let policy = Policy::from(&record);
+        let version = Version::from(&record);
         Self {
             record,
             state,
@@ -71,8 +74,9 @@ impl PidInfo {
             profile,
             digital_object_type,
             locations,
-            version,
+            etag,
             policy,
+            version,
         }
     }
 

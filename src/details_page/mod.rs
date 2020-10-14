@@ -6,6 +6,7 @@ mod publish_button;
 mod locations_list;
 mod version_input;
 mod policy_input;
+mod etag_input;
 
 use type_selector::*;
 use edit_button::*;
@@ -14,10 +15,11 @@ use publish_button::*;
 use locations_list::*;
 use version_input::*;
 use policy_input::*;
+use etag_input::*;
 
 use yew::prelude::*;
 
-use crate::{Model, data_type_registry::{DigitalObjectType, Locations, Pid, Policy, Profile, Version}, pidinfo::{PidInfo, State}};
+use crate::{Model, data_type_registry::{DigitalObjectType, Etag, Locations, Pid, Policy, Profile, Version}, pidinfo::{PidInfo, State}};
 
 pub struct DetailsPage {
     link: ComponentLink<Self>,
@@ -44,6 +46,7 @@ pub enum Msg {
     LocationsChanged(Locations),
     VersionChanged(Version),
     PolicyChanged(Policy),
+    EtagChanged(Etag),
 }
 
 impl Component for DetailsPage {
@@ -95,6 +98,7 @@ impl Component for DetailsPage {
             Msg::LocationsChanged(l) => self.props.record.locations = l,
             Msg::VersionChanged(v) => self.props.record.version = v,
             Msg::PolicyChanged(policy) => self.props.record.policy = policy,
+            Msg::EtagChanged(etag) => self.props.record.etag = etag,
         }
         true
     }
@@ -114,8 +118,9 @@ impl Component for DetailsPage {
         let digital_object_type = self.props.record.digital_object_type.clone();
         let profile = self.props.record.profile.clone();
         let locations = self.props.record.locations.clone();
-        let version = self.props.record.version.clone();
         let policy = self.props.record.policy.clone();
+        let etag = self.props.record.etag.clone();
+        let version = self.props.record.version.clone();
         html! {
             <div id="content" class="maincolumns scroll-vertical">
                 <div class="two-column-lefty">
@@ -137,6 +142,7 @@ impl Component for DetailsPage {
                 <DigitalObjectTypeSelector form_link=self.link.clone() active=self.edit_mode maybe_type=digital_object_type/>
                 <LocationsList form_link=self.link.clone() active=self.edit_mode locations=locations />
                 <PolicyInput form_link=self.link.clone() active=self.edit_mode policy=policy />
+                <EtagInput form_link=self.link.clone() active=self.edit_mode etag=etag />
                 // TODO etag
                 // TODO dateCreated
                 // TODO dateModified
