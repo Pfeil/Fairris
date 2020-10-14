@@ -39,4 +39,5 @@ features = [
   'Element',
   'Window',
   'HtmlSelectElement',
+  'HtmlTextAreaElement',
 ]
