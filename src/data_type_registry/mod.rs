@@ -4,6 +4,7 @@ mod profile;
 mod r#type;
 mod locations;
 mod version;
+mod policy;
 
 use std::{fmt::Display, ops::{Deref, DerefMut}};
 
@@ -11,6 +12,7 @@ pub use profile::*;
 pub use r#type::*;
 pub use locations::*;
 pub use version::*;
+pub use policy::*;
 
 pub trait HasProfileKey {
     /// Associates key-PID to a type.

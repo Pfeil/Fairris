@@ -22,6 +22,7 @@ pub struct PidInfo {
     pub digital_object_type: MaybeDOType,
     pub locations: Locations,
     pub version: Version,
+    pub policy: Policy,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -41,6 +42,7 @@ impl PidInfo {
             digital_object_type: Ok(DigitalObjectType::default()),
             locations: Locations::default(),
             version: Version::default(),
+            policy: Policy::default(),
         }
     }
 
@@ -61,6 +63,7 @@ impl PidInfo {
         let digital_object_type = DigitalObjectType::try_from(&record);
         let locations = Locations::from(&record);
         let version = Version::from(&record);
+        let policy = Policy::from(&record);
         Self {
             record,
             state,
@@ -68,7 +71,8 @@ impl PidInfo {
             profile,
             digital_object_type,
             locations,
-            version
+            version,
+            policy,
         }
     }
 

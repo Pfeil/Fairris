@@ -5,6 +5,7 @@ mod profile_selector;
 mod publish_button;
 mod locations_list;
 mod version_input;
+mod policy_input;
 
 use type_selector::*;
 use edit_button::*;
@@ -12,10 +13,11 @@ use profile_selector::*;
 use publish_button::*;
 use locations_list::*;
 use version_input::*;
+use policy_input::*;
 
 use yew::prelude::*;
 
-use crate::{Model, data_type_registry::{DigitalObjectType, Locations, Pid, Profile, Version}, pidinfo::{PidInfo, State}};
+use crate::{Model, data_type_registry::{DigitalObjectType, Locations, Pid, Policy, Profile, Version}, pidinfo::{PidInfo, State}};
 
 pub struct DetailsPage {
     link: ComponentLink<Self>,
@@ -41,6 +43,7 @@ pub enum Msg {
     DigitalObjectTypeChanged(Result<DigitalObjectType, Pid>),
     LocationsChanged(Locations),
     VersionChanged(Version),
+    PolicyChanged(Policy),
 }
 
 impl Component for DetailsPage {
@@ -89,12 +92,9 @@ impl Component for DetailsPage {
             Msg::DigitalObjectTypeChanged(t) => {
                 self.props.record.digital_object_type = t.map_err(|e| Some(e));
             }
-            Msg::LocationsChanged(l) => {
-                self.props.record.locations = l;
-            }
-            Msg::VersionChanged(v) => {
-                self.props.record.version = v;
-            }
+            Msg::LocationsChanged(l) => self.props.record.locations = l,
+            Msg::VersionChanged(v) => self.props.record.version = v,
+            Msg::PolicyChanged(policy) => self.props.record.policy = policy,
         }
         true
     }
@@ -115,6 +115,7 @@ impl Component for DetailsPage {
         let profile = self.props.record.profile.clone();
         let locations = self.props.record.locations.clone();
         let version = self.props.record.version.clone();
+        let policy = self.props.record.policy.clone();
         html! {
             <div id="content" class="maincolumns scroll-vertical">
                 <div class="two-column-lefty">
@@ -135,7 +136,7 @@ impl Component for DetailsPage {
                 <ProfileSelector form_link=self.link.clone() active=self.edit_mode maybe_profile=profile />
                 <DigitalObjectTypeSelector form_link=self.link.clone() active=self.edit_mode maybe_type=digital_object_type/>
                 <LocationsList form_link=self.link.clone() active=self.edit_mode locations=locations />
-                // TODO policy
+                <PolicyInput form_link=self.link.clone() active=self.edit_mode policy=policy />
                 // TODO etag
                 // TODO dateCreated
                 // TODO dateModified
