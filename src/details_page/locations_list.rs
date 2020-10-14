@@ -1,8 +1,9 @@
+use web_sys::HtmlTextAreaElement;
 use yew::prelude::*;
 
-use crate::data_type_registry::*;
+use crate::data_type_registry::{HasProfileKey, Locations};
 
-use super::DetailsPage;
+use super::{DetailsPage, helpers::DOM};
 
 pub struct LocationsList {
     link: ComponentLink<Self>,
@@ -13,6 +14,7 @@ pub struct LocationsList {
 pub struct Props {
     pub active: bool,
     pub form_link: ComponentLink<DetailsPage>,
+    pub locations: Locations,
 }
 
 #[derive(Debug)]
@@ -43,6 +45,10 @@ impl Component for LocationsList {
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         self.props = props;
+        let dropdown = DOM::get_element::<HtmlTextAreaElement, _>(Locations::get_key_name());
+        // TODO the unused result warning should remember you to also display a missing or unknown type.
+        let as_content = self.props.locations.0.join("\n");
+        dropdown.set_value(as_content.as_str());
         true
     }
 
