@@ -1,9 +1,8 @@
-use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 use crate::data_type_registry::{HasProfileKey, Version};
 
-use super::{helpers::DOM, DetailsPage};
+use super::DetailsPage;
 
 pub struct VersionInput {
     link: ComponentLink<Self>,
@@ -45,18 +44,16 @@ impl Component for VersionInput {
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         self.props = props;
-        let dropdown = DOM::get_element::<HtmlInputElement, _>(Version::get_key_name());
-        let as_content = self.props.version.0.as_str();
-        dropdown.set_value(as_content);
         true
     }
 
     fn view(&self) -> Html {
         let name = Version::get_key_name();
+        let content = self.props.version.0.as_str();
         html! {
             <>
                 <label class="form-description" for=name>{ name }</label>
-                <input class="form-input" id=name disabled=!self.props.active
+                <input class="form-input" id=name disabled=!self.props.active value=content
                     onchange=self.link.callback(|e: ChangeData| match e {
                         ChangeData::Value(versionstring) => {
                             Msg::Value(versionstring)

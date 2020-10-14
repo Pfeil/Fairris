@@ -1,9 +1,8 @@
-use web_sys::HtmlTextAreaElement;
 use yew::prelude::*;
 
 use crate::data_type_registry::{HasProfileKey, Locations};
 
-use super::{DetailsPage, helpers::DOM};
+use super::DetailsPage;
 
 pub struct LocationsList {
     link: ComponentLink<Self>,
@@ -45,18 +44,16 @@ impl Component for LocationsList {
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         self.props = props;
-        let dropdown = DOM::get_element::<HtmlTextAreaElement, _>(Locations::get_key_name());
-        let as_content = self.props.locations.0.join("\n");
-        dropdown.set_value(as_content.as_str());
         true
     }
 
     fn view(&self) -> Html {
         let name = Locations::get_key_name();
+        let content = self.props.locations.0.join("\n");
         html! {
             <>
                 <label class="form-description" for=name>{ name }</label>
-                <textarea class="form-input" id=name disabled=!self.props.active
+                <textarea class="form-input" id=name disabled=!self.props.active value=content
                     onchange=self.link.callback(|e: ChangeData| match e {
                         ChangeData::Value(element) => {
                             let urls: Vec<String> = element.split("\n").map(|str| str.to_owned()).collect();
