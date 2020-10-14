@@ -1,11 +1,12 @@
 use std::convert::TryFrom;
 
 use enum_iterator::IntoEnumIterator;
+use web_sys::HtmlSelectElement;
 use yew::prelude::*;
 
 use crate::data_type_registry::{HasProfileKey, Pid, Profile};
 
-use super::DetailsPage;
+use super::{DetailsPage, helpers::DOM};
 
 pub struct ProfileSelector {
     link: ComponentLink<Self>,
@@ -16,6 +17,7 @@ pub struct ProfileSelector {
 pub struct Props {
     pub active: bool,
     pub form_link: ComponentLink<DetailsPage>,
+    pub maybe_profile: Result<Profile, Option<Pid>>,
 }
 
 #[derive(Debug)]
@@ -46,7 +48,10 @@ impl Component for ProfileSelector {
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        self.props = props;
+        self.props = props.clone();
+        let dropdown = DOM::get_element::<HtmlSelectElement, _>(Profile::get_key_name());
+        // TODO the unused result warning should remember you to also display a missing or unknown type.
+        props.maybe_profile.map(|profile| dropdown.set_value(&*Pid::from(profile)));
         true
     }
 
@@ -63,8 +68,12 @@ impl Component for ProfileSelector {
                     {
                         for Profile::into_enum_iter()
                             .map(|p: Profile| {
+                                let selected: bool = self.props.maybe_profile
+                                    .as_ref()
+                                    .map(|this| *this == p)
+                                    .unwrap_or(false);
                                 let pid = Pid::from(p);
-                                html! { <option value=pid>{ p }</option> }
+                                html! { <option value=pid selected=selected>{ p }</option> }
                             })
                     }
                 </select>

@@ -112,6 +112,7 @@ impl Component for DetailsPage {
     fn view(&self) -> yew::Html {
         let data = &self.props.record;
         let digital_object_type = self.props.record.digital_object_type.clone();
+        let profile = self.props.record.profile.clone();
         html! {
             <div id="content" class="maincolumns scroll-vertical">
                 <div class="two-column-lefty">
@@ -129,7 +130,7 @@ impl Component for DetailsPage {
                 <EditButton form_link=self.link.clone() edit_mode=self.edit_mode />
                 <PublishButton form_link=self.link.clone() edit_mode=self.edit_mode state=self.props.record.state() />
                 
-                <ProfileSelector form_link=self.link.clone() active=self.edit_mode />
+                <ProfileSelector form_link=self.link.clone() active=self.edit_mode maybe_profile=profile />
                 <DigitalObjectTypeSelector form_link=self.link.clone() active=self.edit_mode maybe_type=digital_object_type/>
                 <LocationsList form_link=self.link.clone() active=self.edit_mode />
                 // TODO policy
