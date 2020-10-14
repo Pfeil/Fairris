@@ -46,7 +46,6 @@ impl Component for LocationsList {
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         self.props = props;
         let dropdown = DOM::get_element::<HtmlTextAreaElement, _>(Locations::get_key_name());
-        // TODO the unused result warning should remember you to also display a missing or unknown type.
         let as_content = self.props.locations.0.join("\n");
         dropdown.set_value(as_content.as_str());
         true

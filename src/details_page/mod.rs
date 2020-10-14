@@ -114,6 +114,7 @@ impl Component for DetailsPage {
         let digital_object_type = self.props.record.digital_object_type.clone();
         let profile = self.props.record.profile.clone();
         let locations = self.props.record.locations.clone();
+        let version = self.props.record.version.clone();
         html! {
             <div id="content" class="maincolumns scroll-vertical">
                 <div class="two-column-lefty">
@@ -138,7 +139,7 @@ impl Component for DetailsPage {
                 // TODO etag
                 // TODO dateCreated
                 // TODO dateModified
-                <VersionInput form_link=self.link.clone() active=self.edit_mode />
+                <VersionInput form_link=self.link.clone() active=self.edit_mode version=version />
 
                 <EditButton form_link=self.link.clone() edit_mode=self.edit_mode />
                 <PublishButton form_link=self.link.clone() edit_mode=self.edit_mode state=self.props.record.state() />
