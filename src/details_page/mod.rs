@@ -145,8 +145,10 @@ impl Component for DetailsPage {
                     </div>
                 </div>
                 <div class="two-column-lefty">{ data.view_record() }</div>
-                <EditButton form_link=self.link.clone() edit_mode=self.edit_mode />
-                <PublishButton form_link=self.link.clone() edit_mode=self.edit_mode state=self.props.record.state() />
+                <div class="column-form">
+                    <EditButton form_link=self.link.clone() edit_mode=self.edit_mode />
+                    <PublishButton form_link=self.link.clone() edit_mode=self.edit_mode state=self.props.record.state() />
+                </div>
                 
                 <ProfileSelector form_link=self.link.clone() active=self.edit_mode maybe_profile=profile />
                 <DigitalObjectTypeSelector form_link=self.link.clone() active=self.edit_mode maybe_type=digital_object_type/>
@@ -157,8 +159,8 @@ impl Component for DetailsPage {
                 <DateModifiedInput form_link=self.link.clone() active=self.edit_mode date_modified=date_modified />
                 <VersionInput form_link=self.link.clone() active=self.edit_mode version=version />
 
-                <EditButton form_link=self.link.clone() edit_mode=self.edit_mode />
-                <PublishButton form_link=self.link.clone() edit_mode=self.edit_mode state=self.props.record.state() />
+                //<EditButton form_link=self.link.clone() edit_mode=self.edit_mode />
+                //<PublishButton form_link=self.link.clone() edit_mode=self.edit_mode state=self.props.record.state() />
             </div>
         }
     }

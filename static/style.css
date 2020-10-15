@@ -4,6 +4,8 @@
     --color-dark1: #272B30;
     --color-ok: #699a46;
     --color-abort: #c66262;
+    --color-inactive: #8c8c8c;
+    --color-new: #794aa9;
     
     --color-bg-content: var(--color-bright1);
     --color-bg-sidebar: var(--color-dark1);
@@ -99,6 +101,33 @@ p {
     font-size: larger;
     background-color: var(--color-abort);
     border-color: var(--color-abort);
+    color: white;
+    margin-top: 2em;
+    padding: 0.3em;
+}
+
+.inactive-button {
+    font-size: larger;
+    background-color: var(--color-inactive);
+    border-color: var(--color-inactive);
+    color: white;
+    margin-top: 2em;
+    padding: 0.3em;
+}
+
+.update-button {
+    font-size: larger;
+    background-color: var(--color-ok);
+    border-color: var(--color-ok);
+    color: white;
+    margin-top: 2em;
+    padding: 0.3em;
+}
+
+.publish-button {
+    font-size: larger;
+    background-color: var(--color-new);
+    border-color: var(--color-new);
     color: white;
     margin-top: 2em;
     padding: 0.3em;
