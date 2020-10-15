@@ -77,3 +77,37 @@ macro_rules! try_from_all {
         
     }
 }
+
+macro_rules! impl_from_record_single_entry {
+    ( $given_type:tt ) => {
+        
+        impl From<&PidRecord> for $given_type {
+            fn from(record: &PidRecord) -> Self {
+                record
+                    .entries
+                    .get(&*Self::get_key())
+                    .and_then(|list| list.get(0).and_then(|entry| Some(Self::from(entry))))
+                    .unwrap_or_default()
+            }
+        }
+        
+    }
+}
+
+macro_rules! newtype_deref {
+    ($name:ty, $target:ty) => {
+        impl Deref for $name {
+            type Target = $target;
+        
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
+        }
+        
+        impl DerefMut for $name {
+            fn deref_mut(&mut self) -> &mut Self::Target {
+                &mut self.0
+            }
+        }       
+    };
+}

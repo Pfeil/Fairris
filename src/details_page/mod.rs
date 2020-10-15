@@ -7,6 +7,8 @@ mod locations_list;
 mod version_input;
 mod policy_input;
 mod etag_input;
+mod date_created_input;
+mod date_modified_input;
 
 use type_selector::*;
 use edit_button::*;
@@ -16,10 +18,12 @@ use locations_list::*;
 use version_input::*;
 use policy_input::*;
 use etag_input::*;
+use date_created_input::*;
+use date_modified_input::*;
 
 use yew::prelude::*;
 
-use crate::{Model, data_type_registry::{DigitalObjectType, Etag, Locations, Pid, Policy, Profile, Version}, pidinfo::{PidInfo, State}};
+use crate::{Model, data_type_registry::{DateCreated, DateModified, DigitalObjectType, Etag, Locations, Pid, Policy, Profile, Version}, pidinfo::{PidInfo, State}};
 
 pub struct DetailsPage {
     link: ComponentLink<Self>,
@@ -44,6 +48,8 @@ pub enum Msg {
     ProfileChanged(Result<Profile, Pid>),
     DigitalObjectTypeChanged(Result<DigitalObjectType, Pid>),
     LocationsChanged(Locations),
+    DateCreatedChanged(DateCreated),
+    DateModifiedChanged(DateModified),
     VersionChanged(Version),
     PolicyChanged(Policy),
     EtagChanged(Etag),
@@ -99,6 +105,8 @@ impl Component for DetailsPage {
             Msg::VersionChanged(v) => self.props.record.version = v,
             Msg::PolicyChanged(policy) => self.props.record.policy = policy,
             Msg::EtagChanged(etag) => self.props.record.etag = etag,
+            Msg::DateCreatedChanged(date) => self.props.record.date_created = date,
+            Msg::DateModifiedChanged(date) => self.props.record.date_modified = date,
         }
         true
     }
@@ -118,6 +126,8 @@ impl Component for DetailsPage {
         let digital_object_type = self.props.record.digital_object_type.clone();
         let profile = self.props.record.profile.clone();
         let locations = self.props.record.locations.clone();
+        let date_created = self.props.record.date_created.clone();
+        let date_modified = self.props.record.date_modified.clone();
         let policy = self.props.record.policy.clone();
         let etag = self.props.record.etag.clone();
         let version = self.props.record.version.clone();
@@ -143,9 +153,8 @@ impl Component for DetailsPage {
                 <LocationsList form_link=self.link.clone() active=self.edit_mode locations=locations />
                 <PolicyInput form_link=self.link.clone() active=self.edit_mode policy=policy />
                 <EtagInput form_link=self.link.clone() active=self.edit_mode etag=etag />
-                // TODO etag
-                // TODO dateCreated
-                // TODO dateModified
+                <DateCreatedInput form_link=self.link.clone() active=self.edit_mode date_created=date_created />
+                <DateModifiedInput form_link=self.link.clone() active=self.edit_mode date_modified=date_modified />
                 <VersionInput form_link=self.link.clone() active=self.edit_mode version=version />
 
                 <EditButton form_link=self.link.clone() edit_mode=self.edit_mode />

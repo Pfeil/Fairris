@@ -21,6 +21,8 @@ pub struct PidInfo {
     pub profile: MaybeProfile,
     pub digital_object_type: MaybeDOType,
     pub locations: Locations,
+    pub date_created: DateCreated,
+    pub date_modified: DateModified,
     pub etag: Etag,
     pub policy: Policy,
     pub version: Version,
@@ -42,6 +44,8 @@ impl PidInfo {
             profile: Ok(Profile::default()),
             digital_object_type: Ok(DigitalObjectType::default()),
             locations: Locations::default(),
+            date_created: DateCreated::default(),
+            date_modified: DateModified::default(),
             etag: Etag::default(),
             policy: Policy::default(),
             version: Version::default(),
@@ -64,6 +68,8 @@ impl PidInfo {
         let profile: MaybeProfile = Profile::try_from(&record);
         let digital_object_type = DigitalObjectType::try_from(&record);
         let locations = Locations::from(&record);
+        let date_created = DateCreated::from(&record);
+        let date_modified = DateModified::from(&record);
         let etag = Etag::from(&record);
         let policy = Policy::from(&record);
         let version = Version::from(&record);
@@ -74,6 +80,8 @@ impl PidInfo {
             profile,
             digital_object_type,
             locations,
+            date_created,
+            date_modified,
             etag,
             policy,
             version,
