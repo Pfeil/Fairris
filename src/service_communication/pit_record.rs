@@ -33,6 +33,16 @@ impl PidRecord {
     pub fn describe(&self) -> String {
         String::from("TODO implement descripton of records")
     }
+
+    pub fn same_content_like(&self, other: &Self) -> bool {
+        self.entries
+            .keys()
+            .chain(other.entries.keys())
+            .filter(|&key| self.entries.get(key) != other.entries.get(key))
+            .map(|x| log::debug!("Found difference: {}", x))
+            .count()
+            == 0
+    }
 }
 
 impl PartialEq for PidRecord {

@@ -74,6 +74,7 @@ impl Component for DetailsPage {
         match msg {
             Msg::ToggleEditMode => {
                 self.edit_mode = !self.edit_mode;
+                self.props.record.update_state();
                 if !self.edit_mode {
                     self.props
                         .model_link

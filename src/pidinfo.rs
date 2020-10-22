@@ -101,6 +101,19 @@ impl PidInfo {
         record_state
     }
 
+    pub fn update_state(&mut self) {
+        let old_record = &self.record;
+        let new_record = &self.as_record();
+        let changed = !old_record.same_content_like(new_record);
+        if changed {
+            match self.state {
+                State::Unregistered => {}
+                State::Modified => {}
+                State::Clean => self.state = State::Modified,
+            }
+        }
+    }
+
     pub fn state(&self) -> State {
         self.state.clone()
     }
