@@ -66,7 +66,7 @@ impl Component for Model {
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        log::debug!("Model received update.");
+        log::debug!("Model received update {:?}", msg);
         match msg {
             Msg::Error(issue) => log::error!("Something went wrong: {}", issue),
 
@@ -74,11 +74,9 @@ impl Component for Model {
                 self.known_pids.borrow_mut().add_unregistered(self.link.clone());
             }
             Msg::AddPidItem(item) => {
-                log::debug!("Adding/updating item: {:?}", item);
                 self.known_pids.borrow_mut().insert(item.pid().clone(), item);
             },
             Msg::Remove(pid) => {
-                log::debug!("Removing item: {}", pid);
                 self.known_pids.borrow_mut().remove(&pid);
             }
             Msg::ReplaceItemWithPid(pid, record) => {
