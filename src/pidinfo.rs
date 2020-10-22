@@ -88,6 +88,19 @@ impl PidInfo {
         }
     }
 
+    pub fn as_record(&self) -> PidRecord {
+        let mut record_state = PidRecord::default();
+        self.profile.write(&mut record_state);
+        self.digital_object_type.write(&mut record_state);
+        self.locations.write(&mut record_state);
+        self.date_created.write(&mut record_state);
+        self.date_modified.write(&mut record_state);
+        self.etag.write(&mut record_state);
+        self.policy.write(&mut record_state);
+        self.version.write(&mut record_state);
+        record_state
+    }
+
     pub fn state(&self) -> State {
         self.state.clone()
     }

@@ -77,7 +77,7 @@ impl Component for DetailsPage {
                 if !self.edit_mode {
                     self.props
                         .model_link
-                        .send_message(super::Msg::UpdatePidItem(self.props.record.clone()))
+                        .send_message(super::Msg::AddPidItem(self.props.record.clone()))
                 }
             }
             Msg::Publish => {
@@ -89,9 +89,13 @@ impl Component for DetailsPage {
                         log::error!("UNIMPLEMENTED!")
                     }
                     State::Unregistered => {
-                        // TODO 0. send create request to PIT service
-                        // TODO 1. pid (dummy) will change -> add new, remove old item in Model
-                        log::error!("UNIMPLEMENTED!")
+                        // 0. send create request to PIT service
+                        // TODO consider a waiting animation or something in here.
+                        //let registered_record: PidInfo = self.props.record.register(self.props.model_link.callback(||));
+                        // 1. pid (dummy) will change -> add new, remove old item in Model
+                        //self.props.model_link.send_message(super::Msg::AddPidItem(registered_record));
+                        //self.props.model_link.send_message(super::Msg::Remove(self.props.record.pid().clone()));
+                        self.props.model_link.send_message(super::Msg::RegisterFDO(self.props.record.clone()));
                     }
                 }
             }

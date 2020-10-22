@@ -51,7 +51,7 @@ impl Component for DigitalObjectTypeSelector {
         self.props = props.clone();
         let dropdown = DOM::get_element::<HtmlSelectElement, _>(DigitalObjectType::get_key_name());
         // TODO the unused result warning should remember you to also display a missing or unknown type.
-        props.maybe_type.map(|t| dropdown.set_value(&*Pid::from(t)));
+        props.maybe_type.map(|t| dropdown.set_value(&*Pid::from(&t)));
         true
     }
 
@@ -72,7 +72,7 @@ impl Component for DigitalObjectTypeSelector {
                                     .as_ref()
                                     .map(|this| *this == t)
                                     .unwrap_or(false);
-                                let pid = Pid::from(t);
+                                let pid = Pid::from(&t);
                                 html! { <option value=pid selected=selected>{ t }</option> }
                             })
                     }

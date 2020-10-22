@@ -7,14 +7,17 @@ mod pidinfo;
 mod search_component;
 mod service_communication;
 mod data_type_registry;
+mod pit_service;
 
-use std::{cell::RefCell, rc::Rc};
+use std::{ops::Deref, cell::RefCell, rc::Rc};
 
 use create_component::CreateComponent;
+use data_type_registry::Pid;
 use details_page::DetailsPage;
 use known_pids::*;
 use pidinfo::PidInfo;
 use search_component::SearchComponent;
+use pit_service::PitService;
 
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
@@ -36,14 +39,19 @@ pub enum AppRoute {
 pub struct Model {
     link: ComponentLink<Self>,
     known_pids: Rc<RefCell<KnownPids>>,
+    pit_service: PitService,
 }
 
 #[derive(Eq, PartialEq, Debug)]
 pub enum Msg {
     AddDefaultItem,
     AddPidItem(PidInfo),
-    UpdatePidItem(PidInfo),
+    ReplaceItemWithPid(Pid, PidInfo),
     Remove(String),
+
+    RegisterFDO(PidInfo),
+    UpdateFDO(PidInfo),
+
     Error(String),
 }
 
@@ -53,27 +61,33 @@ impl Component for Model {
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
         let known_pids: Rc<RefCell<KnownPids>> = Rc::new(RefCell::new(KnownPids::default()));
-        Self { link, known_pids }
+        let pit_service = PitService::new(link.clone());
+        Self { link, known_pids, pit_service }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         log::debug!("Model received update.");
         match msg {
+            Msg::Error(issue) => log::error!("Something went wrong: {}", issue),
+
+            Msg::AddDefaultItem => {
+                self.known_pids.borrow_mut().add_unregistered(self.link.clone());
+            }
             Msg::AddPidItem(item) => {
-                log::debug!("Adding new item: {:?}", item);
+                log::debug!("Adding/updating item: {:?}", item);
                 self.known_pids.borrow_mut().insert(item.pid().clone(), item);
             },
             Msg::Remove(pid) => {
                 log::debug!("Removing item: {}", pid);
                 self.known_pids.borrow_mut().remove(&pid);
             }
-            Msg::AddDefaultItem => {
-                self.known_pids.borrow_mut().add_unregistered(self.link.clone());
-            }
-            Msg::UpdatePidItem(item) => {
-                self.known_pids.borrow_mut().find_mut(item.pid()).and_then(|found| Some(*found = item) );
-            }
-            Msg::Error(issue) => log::error!("Something went wrong: {}", issue),
+            Msg::ReplaceItemWithPid(pid, record) => {
+                self.link.send_message(Msg::AddPidItem(record));
+                self.link.send_message(Msg::Remove(pid.deref().clone()))
+            },
+
+            Msg::RegisterFDO(mut record) => self.pit_service.register_pidinfo(&mut record),
+            Msg::UpdateFDO(mut record) => self.pit_service.update_pidinfo(&mut record),
         }
         true
     }

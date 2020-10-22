@@ -3,7 +3,7 @@ use serde_json as json;
 use crate::service_communication::{PidRecord, pit_record::PidRecordEntry};
 
 use super::{HasProfileKey, Pid};
-use std::fmt::Display;
+use std::{ops::Deref, fmt::Display};
 
 #[derive(Debug, Clone)]
 pub struct Policy(pub String);
@@ -19,8 +19,16 @@ impl HasProfileKey for Policy {
     fn get_key() -> Pid {
         Pid("21.T11148/8074aed799118ac263ad".into())
     }
+    
     fn get_key_name() -> &'static str {
         "digitalObjectPolicy"
+    }
+
+    fn write(&self, record: &mut PidRecord) {
+        record.add_attribute(
+            Self::get_key().deref().clone(),
+            Policy::get_key_name().into(), 
+            json::Value::String(self.0.clone()))
     }
 }
 

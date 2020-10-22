@@ -2,7 +2,7 @@ use super::{HasProfileKey, Pid};
 use crate::service_communication::{PidRecord, pit_record::PidRecordEntry};
 
 use serde_json as json;
-use std::fmt::Display;
+use std::{ops::Deref, fmt::Display};
 
 #[derive(Debug, Clone)]
 pub struct Etag(pub String);
@@ -23,8 +23,16 @@ impl HasProfileKey for Etag {
     fn get_key() -> Pid {
         Pid("21.T11148/92e200311a56800b3e47".into())
     }
+    
     fn get_key_name() -> &'static str {
         "etag"
+    }
+
+    fn write(&self, record: &mut PidRecord) {
+        record.add_attribute(
+            Self::get_key().deref().clone(),
+            Self::get_key_name().into(),
+            json::Value::String(self.0.clone()))
     }
 }
 

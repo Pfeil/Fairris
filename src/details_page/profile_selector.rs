@@ -51,7 +51,7 @@ impl Component for ProfileSelector {
         self.props = props.clone();
         let dropdown = DOM::get_element::<HtmlSelectElement, _>(Profile::get_key_name());
         // TODO the unused result warning should remember you to also display a missing or unknown type.
-        props.maybe_profile.map(|profile| dropdown.set_value(&*Pid::from(profile)));
+        props.maybe_profile.map(|profile| dropdown.set_value(&*Pid::from(&profile)));
         true
     }
 
@@ -72,7 +72,7 @@ impl Component for ProfileSelector {
                                     .as_ref()
                                     .map(|this| *this == p)
                                     .unwrap_or(false);
-                                let pid = Pid::from(p);
+                                let pid = Pid::from(&p);
                                 html! { <option value=pid selected=selected>{ p }</option> }
                             })
                     }

@@ -16,7 +16,7 @@ macro_rules! try_from_pid {
                 $given_type::into_enum_iter() // iterate over every profile
                     .map(|p: $given_type| {
                         // assiociate them with their PID
-                        (Pid::from(p), p)
+                        (Pid::from(&p), p)
                     })
                     .find(|(p_pid, _)| pid == p_pid) // find the pid
                     .map(|(_, p)| p) // get profile

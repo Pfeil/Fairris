@@ -1,4 +1,4 @@
-use std::{convert::TryFrom, fmt::Display};
+use std::{ops::Deref, convert::TryFrom, fmt::Display};
 
 use enum_iterator::IntoEnumIterator;
 use serde_json as json;
@@ -21,8 +21,8 @@ pub enum Profile {
 pub type MaybeProfile = Result<Profile, Option<Pid>>;
 
 /// Associates profiles with their PID.
-impl From<Profile> for Pid {
-    fn from(p: Profile) -> Self {
+impl From<&Profile> for Pid {
+    fn from(p: &Profile) -> Self {
         match p {
             Profile::Testbed => Pid(r#"21.T11148/61fd3446879407065218"#.into()),
         }
@@ -42,8 +42,16 @@ impl HasProfileKey for Profile {
     fn get_key() -> Pid {
         Pid("21.T11148/076759916209e5d62bd5".into())
     }
+    
     fn get_key_name() -> &'static str {
         "kernelInformationProfile"
+    }
+    
+    fn write(&self, record: &mut PidRecord) {
+        record.add_attribute(
+            Self::get_key().deref().clone(),
+            Self::get_key_name().into(),
+            Pid::from(self).deref().to_owned().into());
     }
 }
 
@@ -55,6 +63,12 @@ impl Default for Profile {
 
 try_from_all!(Profile, Pid);
 
+impl From<Profile> for Pid {
+    fn from(p: Profile) -> Self {
+        Pid::from(&p)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -63,7 +77,7 @@ mod tests {
     fn profile_pid_conversion() {
         let wrong_pid = Pid("wrong/pid".into());
         assert_eq!(Profile::try_from(&wrong_pid), Err(wrong_pid));
-        let testbed_pid = Pid::from(Profile::Testbed);
+        let testbed_pid = Pid::from(&Profile::Testbed);
         assert_eq!(Profile::try_from(&testbed_pid), Ok(Profile::Testbed));
     }
 }

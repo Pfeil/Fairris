@@ -14,8 +14,16 @@ impl HasProfileKey for DateCreated {
     fn get_key() -> Pid {
         Pid("21.T11148/aafd5fb4c7222e2d950a".into())
     }
+
     fn get_key_name() -> &'static str {
         "dateCreated"
+    }
+
+    fn write(&self, record: &mut PidRecord) {
+        record.add_attribute(
+            Self::get_key().deref().clone(),
+            Self::get_key_name().into(),
+            json::Value::String(self.0.to_rfc3339()))
     }
 }
 
@@ -26,8 +34,16 @@ impl HasProfileKey for DateModified {
     fn get_key() -> Pid {
         Pid("21.T11148/397d831aa3a9d18eb52c".into())
     }
+
     fn get_key_name() -> &'static str {
         "dateModified"
+    }
+
+    fn write(&self, record: &mut PidRecord) {
+        record.add_attribute(
+            Self::get_key().deref().clone(),
+            Self::get_key_name().into(),
+            json::Value::String(self.0.to_rfc3339()))
     }
 }
 

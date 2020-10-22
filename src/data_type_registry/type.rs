@@ -1,10 +1,10 @@
-use std::{convert::TryFrom, fmt::Display};
+use std::{ops::Deref, convert::TryFrom, fmt::Display};
 
 use serde_json as json;
 
 use super::{HasProfileKey, Pid};
-use enum_iterator::IntoEnumIterator;
 use crate::service_communication::{pit_record::PidRecordEntry, PidRecord};
+use enum_iterator::IntoEnumIterator;
 
 #[derive(Clone, Copy, Debug, IntoEnumIterator, PartialEq)]
 pub enum DigitalObjectType {
@@ -30,8 +30,8 @@ pub type MaybeDOType = Result<DigitalObjectType, Option<Pid>>;
 
 /// Associates types with their PID.
 /// FIXME PIDs are not yet correct as they do not yet exist.
-impl From<DigitalObjectType> for Pid {
-    fn from(p: DigitalObjectType) -> Self {
+impl From<&DigitalObjectType> for Pid {
+    fn from(p: &DigitalObjectType) -> Self {
         match p {
             DigitalObjectType::Publication => Pid(r#"21.T11148/Publication"#.into()),
             DigitalObjectType::Paper => Pid(r#"21.T11148/Paper"#.into()),
@@ -39,7 +39,7 @@ impl From<DigitalObjectType> for Pid {
             DigitalObjectType::Application => Pid(r#"21.T11148/Application"#.into()),
             DigitalObjectType::Manuscript => Pid(r#"21.T11148/Manuscript"#.into()),
             DigitalObjectType::ManuscriptPage => Pid(r#"21.T11148/ManuscriptPage"#.into()),
-            DigitalObjectType::Annotations => Pid(r#"21.T11148/Annotations"#.into()),
+            DigitalObjectType::Annotations => Pid(r#"21.T11148/2332935d30f0d6dde77b"#.into()),
         }
     }
 }
@@ -48,13 +48,13 @@ impl From<DigitalObjectType> for Pid {
 impl Display for DigitalObjectType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            DigitalObjectType::Publication => {write!(f, "Publication")}
-            DigitalObjectType::Paper => {write!(f, "Paper")}
-            DigitalObjectType::Algorithm => {write!(f, "Algorithm")}
-            DigitalObjectType::Application => {write!(f, "Application")}
-            DigitalObjectType::Manuscript => {write!(f, "Manuscript")}
-            DigitalObjectType::ManuscriptPage => {write!(f, "ManuscriptPage")}
-            DigitalObjectType::Annotations => {write!(f, "Annotations")}
+            DigitalObjectType::Publication => write!(f, "Publication"),
+            DigitalObjectType::Paper => write!(f, "Paper"),
+            DigitalObjectType::Algorithm => write!(f, "Algorithm"),
+            DigitalObjectType::Application => write!(f, "Application"),
+            DigitalObjectType::Manuscript => write!(f, "Manuscript"),
+            DigitalObjectType::ManuscriptPage => write!(f, "ManuscriptPage"),
+            DigitalObjectType::Annotations => write!(f, "https://www.w3.org/ns/oa#Annotation"),
         }
     }
 }
@@ -67,6 +67,14 @@ impl HasProfileKey for DigitalObjectType {
     fn get_key_name() -> &'static str {
         "digitalObjectType"
     }
+
+    fn write(&self, record: &mut PidRecord) {
+        record.add_attribute(
+            Self::get_key().deref().clone(),
+            DigitalObjectType::get_key_name().into(),
+            Pid::from(self).deref().to_owned().into(),
+        )
+    }
 }
 
 impl Default for DigitalObjectType {
@@ -76,3 +84,9 @@ impl Default for DigitalObjectType {
 }
 
 try_from_all!(DigitalObjectType, Pid);
+
+impl From<DigitalObjectType> for Pid {
+    fn from(t: DigitalObjectType) -> Self {
+        Pid::from(&t)
+    }
+}
