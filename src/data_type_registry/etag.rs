@@ -9,7 +9,7 @@ pub struct Etag(pub String);
 
 impl Default for Etag {
     fn default() -> Self {
-        Etag(r#"{ "sha160sum": "sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c" }"#.into())
+        Etag(r#"{ "sha256sum": "sha256 c50624fd5ddd2b9652b72e2d2eabcb31a54b777718ab6fb7e44b582c20239a7c" }"#.into())
     }
 }
 
