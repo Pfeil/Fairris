@@ -117,7 +117,7 @@ impl Component for DetailsPage {
     }
 
     fn change(&mut self, props: Self::Properties) -> yew::ShouldRender {
-        let changed = self.props.record == props.record;
+        let changed = self.props.record != props.record;
         if changed {
             self.reset_page_state();
             self.props = props;

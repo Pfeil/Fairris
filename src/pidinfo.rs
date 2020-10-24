@@ -11,13 +11,14 @@ use yew_router::prelude::*;
 
 #[derive(Clone, Debug)]
 pub struct PidInfo {
+    // The published record (if published)
     record: PidRecord,
     state: State,
     model_link: ComponentLink<Model>,
 
-    // local modifications will take in these members
-    // before it will be serialized back into the internal record.
-    // Serializing back will happen on publishing.
+    // The record will contain the published record (if published).
+    // The variables below contain the local state.
+    // This way, it is possible to determine if the current local state is clean or modified.
     pub profile: MaybeProfile,
     pub digital_object_type: MaybeDOType,
     pub locations: Locations,

@@ -46,10 +46,13 @@ impl PidRecord {
 }
 
 impl PartialEq for PidRecord {
+    /// Two records are equal in this case, if they have the same PID (in case they both have a PID).
+    /// If the pids of both records are not empty, they will be used for comparison.
+    /// If the pids are empty, the content is compared.
     fn eq(&self, other: &Self) -> bool {
         match (self.pid.is_empty(), other.pid.is_empty()) {
-            (true, true) => self.pid == other.pid,
-            (false, false) => {
+            (false, false) => self.pid == other.pid,
+            (true, true) => {
                 self.entries
                     .keys()
                     .chain(other.entries.keys())
