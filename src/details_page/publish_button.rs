@@ -1,8 +1,7 @@
 use yew::prelude::*;
 
-use crate::pidinfo::State;
-
 use super::DetailsPage;
+use crate::pidinfo::State;
 
 pub struct PublishButton {
     link: ComponentLink<Self>,
@@ -36,9 +35,9 @@ impl Component for PublishButton {
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        let changes = self.props.edit_mode != props.edit_mode;
-        self.props = props;
-        changes
+        let has_changes = self.props != props;
+        if has_changes { self.props = props; }
+        has_changes
     }
 
     fn view(&self) -> Html {
@@ -56,5 +55,11 @@ impl Component for PublishButton {
                     onclick=self.link.callback(|_| Msg::Clicked)>{ label }</button>
             }
         }
+    }
+}
+
+impl PartialEq for Props {
+    fn eq(&self, other: &Self) -> bool {
+        self.edit_mode == other.edit_mode && self.state == other.state
     }
 }
