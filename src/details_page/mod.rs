@@ -85,17 +85,10 @@ impl Component for DetailsPage {
                 match self.props.record.state() {
                     State::Clean => log::error!("Status is clean. This should not happen."),
                     State::Modified => {
-                        // TODO 0. send update request to PIT service
-                        // TODO 1. pid will stay the same -> update item in Model
-                        log::error!("UNIMPLEMENTED!")
+                        self.props.model_link.send_message(super::Msg::UpdateFDO(self.props.record.clone()))
                     }
                     State::Unregistered => {
-                        // 0. send create request to PIT service
                         // TODO consider a waiting animation or something in here.
-                        //let registered_record: PidInfo = self.props.record.register(self.props.model_link.callback(||));
-                        // 1. pid (dummy) will change -> add new, remove old item in Model
-                        //self.props.model_link.send_message(super::Msg::AddPidItem(registered_record));
-                        //self.props.model_link.send_message(super::Msg::Remove(self.props.record.pid().clone()));
                         self.props.model_link.send_message(super::Msg::RegisterFDO(self.props.record.clone()));
                     }
                 }

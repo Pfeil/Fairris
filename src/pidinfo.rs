@@ -91,6 +91,8 @@ impl PidInfo {
 
     pub fn as_record(&self) -> PidRecord {
         let mut record_state = PidRecord::default();
+        record_state.pid = self.record.pid.clone();
+
         self.profile.write(&mut record_state);
         self.digital_object_type.write(&mut record_state);
         self.locations.write(&mut record_state);

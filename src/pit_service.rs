@@ -23,10 +23,12 @@ impl PitService {
     }
 
     pub fn update_pidinfo(&mut self, info: &mut PidInfo) {
+        let pid = Pid(info.pid().clone());
         let record: PidRecord = info.as_record();
         let record = json::to_value(record).unwrap();
         let model_link = self.model_link.clone();
-        self.register_json(
+        self.update_json(
+            &pid,
             record,
             self.model_link.clone().callback(move |response: Response<Result<String, Error>>| {
                 if response.status().is_success() {
@@ -96,12 +98,33 @@ impl PitService {
         log::debug!("register() has finished.");
     }
 
+    fn update_json(
+        &mut self,
+        pid: &Pid,
+        record: serde_json::Value,
+        callback: Callback<Response<Result<String, Error>>>,
+    ) {
+        log::debug!("update() was called.");
+        let request = Request::put(Self::get_update_uri(&pid))
+            .header("Content-Type", "application/json")
+            .body(Json(&record))
+            .expect("Failed to build this request.");
+        let task = FetchService::fetch(request, callback)
+            .map_err(|e| log::error!("Error creating task to update metadata: {}", e));
+        self.task = task.ok();
+        log::debug!("update() has finished.");
+    }
+
     // TODO make this configurable at compile/run time
     fn get_base_uri() -> &'static str {
         "http://localhost:8090"
     }
 
     fn get_create_uri() -> String {
-        format!("{}{}", PitService::get_base_uri(), "/api/v1/pit/pid/")
+        format!("{}/{}/", Self::get_base_uri(), "api/v1/pit/pid")
+    }
+
+    fn get_update_uri(pid: &Pid) -> String {
+        format!("{}/{}/{}", Self::get_base_uri(), "api/v1/pit/pid", *pid)
     }
 }
