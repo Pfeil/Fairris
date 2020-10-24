@@ -5,7 +5,7 @@ use crate::service_communication::{pit_record::PidRecordEntry, PidRecord};
 use super::{HasProfileKey, Pid};
 use std::{ops::Deref, fmt::Display};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Version(pub String);
 
 /// Associates profiles with their Display name (for the user interface).
@@ -53,5 +53,11 @@ impl From<&PidRecord> for Version {
             .get(&*Self::get_key())
             .and_then(|list| list.get(0).and_then(|entry| Some(Self::from(entry))))
             .unwrap_or_default()
+    }
+}
+
+impl Default for Version {
+    fn default() -> Self {
+        Version("1.0.0".into())
     }
 }
