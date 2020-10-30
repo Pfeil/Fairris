@@ -1,13 +1,16 @@
 #![recursion_limit = "1024"]
 
-mod create_component;
-mod details_page;
 mod known_pids;
 mod pidinfo;
-mod search_component;
 mod service_communication;
 mod data_type_registry;
+
+mod create_component;
+mod details_page;
+mod search_component;
+
 mod pit_service;
+mod collection_service;
 
 use std::{ops::Deref, cell::RefCell, rc::Rc};
 
