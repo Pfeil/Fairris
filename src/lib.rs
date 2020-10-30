@@ -1,5 +1,8 @@
 #![recursion_limit = "1024"]
 
+#[macro_use]
+extern crate strum;
+
 mod known_pids;
 mod known_data;
 mod pidinfo;

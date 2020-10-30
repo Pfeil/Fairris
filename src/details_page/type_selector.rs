@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use enum_iterator::IntoEnumIterator;
+use strum::IntoEnumIterator;
 use web_sys::HtmlSelectElement;
 use yew::prelude::*;
 
@@ -66,7 +66,7 @@ impl Component for DigitalObjectTypeSelector {
                             other => Msg::Error(format!("Got unexpected: {:?}", other))
                         })>
                     {
-                        for DigitalObjectType::into_enum_iter()
+                        for DigitalObjectType::iter()
                             .map(|t: DigitalObjectType| {
                                 let selected: bool = self.props.maybe_type
                                     .as_ref()

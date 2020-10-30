@@ -1,6 +1,6 @@
 use std::{ops::Deref, convert::TryFrom, fmt::Display};
 
-use enum_iterator::IntoEnumIterator;
+use strum::IntoEnumIterator;
 use serde_json as json;
 
 use crate::service_communication::{pit_record::PidRecordEntry, PidRecord};
@@ -13,7 +13,7 @@ use super::{HasProfileKey, Pid};
 /// - the Display::fmt() implementation to associate a human readable name for the UI.
 ///
 /// Fortunately, the compiler will remember you to do so.
-#[derive(Clone, Copy, Debug, IntoEnumIterator, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, EnumIter, PartialEq, Eq)]
 pub enum Profile {
     Testbed,
 }

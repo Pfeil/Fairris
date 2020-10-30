@@ -8,6 +8,7 @@ use crate::{
 
 use rand::prelude::*;
 use yew::prelude::*;
+use strum::IntoEnumIterator;
 
 #[derive(Default)]
 pub struct KnownData {
@@ -15,18 +16,37 @@ pub struct KnownData {
 }
 
 #[derive(Debug, Default, PartialEq, Eq, Hash, Clone, Copy)]
-pub struct DataID(u16);
+pub struct DataID(pub u16);
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, EnumIter)]
 pub enum Data {
     AnnotatedImage(AnnotatedImage),
     Collection(Collection),
 }
 
+impl Data {
+    pub fn has_same_datatype_like(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Data::AnnotatedImage(_), Data::AnnotatedImage(_)) => true,
+            (Data::Collection(_), Data::Collection(_)) => true,
+
+            (Data::AnnotatedImage(_), Data::Collection(_)) => false,
+            (Data::Collection(_), Data::AnnotatedImage(_)) => false,
+        }
+    }
+
+    pub fn type_name(&self) -> String {
+        match self {
+            Data::AnnotatedImage(_) => "Annotated Image".into(),
+            Data::Collection(_) => "Collection".into(),
+        }
+    }
+}
+
 #[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct AnnotatedImage {
-    url: String,
-    annotation_urls: Vec<String>,
+    pub url: String,
+    pub annotation_urls: Vec<String>,
 }
 
 impl KnownData {
@@ -41,6 +61,12 @@ impl KnownData {
         }
         self.known_data.insert(id, data);
         id
+    }
+}
+
+impl Default for Data {
+    fn default() -> Self {
+        Data::AnnotatedImage(AnnotatedImage::default())
     }
 }
 

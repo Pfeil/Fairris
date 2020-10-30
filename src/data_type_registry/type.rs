@@ -4,9 +4,9 @@ use serde_json as json;
 
 use super::{HasProfileKey, Pid};
 use crate::service_communication::{pit_record::PidRecordEntry, PidRecord};
-use enum_iterator::IntoEnumIterator;
+use strum::IntoEnumIterator;
 
-#[derive(Clone, Copy, Debug, IntoEnumIterator, PartialEq)]
+#[derive(Clone, Copy, Debug, EnumIter, PartialEq)]
 pub enum DigitalObjectType {
     // a collection (api) item with all related objects to replicate the results.
     Publication,

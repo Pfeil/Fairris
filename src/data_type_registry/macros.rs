@@ -13,7 +13,7 @@ macro_rules! try_from_pid {
             type Error = $error_type;
         
             fn try_from(pid: &Pid) -> Result<Self, Self::Error> {
-                $given_type::into_enum_iter() // iterate over every profile
+                $given_type::iter() // iterate over every profile
                     .map(|p: $given_type| {
                         // assiociate them with their PID
                         (Pid::from(&p), p)

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{collection_capabilities::CollectionCapabilities, collection_properties::CollectionProperties};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct Collection {
     #[serde(skip_serializing)]

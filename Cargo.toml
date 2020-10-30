@@ -22,15 +22,15 @@ anyhow = "1"
 
 serde_json = "1"
 serde = "1"
-chrono = { version = "0.4", features = ["serde", "wasmbind"] }
+chrono = { version = "*", features = ["serde", "wasmbind"] }
 
-rand = { version = "0.7", features = ["wasm-bindgen"] }
-wee_alloc = "0.4"
-enum-iterator = "*"
+rand = { version = "*", features = ["wasm-bindgen"] }
+strum = { version = "0.19", features = ["derive"] }
 
-log = "0.4"
-wasm-logger = "0.2"
-console_error_panic_hook = "0.1"
+wee_alloc = "*"
+log = "*"
+wasm-logger = "*"
+console_error_panic_hook = "*"
 
 [dependencies.web-sys]
 version = "0.3"

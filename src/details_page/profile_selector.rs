@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use enum_iterator::IntoEnumIterator;
+use strum::IntoEnumIterator;
 use web_sys::HtmlSelectElement;
 use yew::prelude::*;
 
@@ -66,7 +66,7 @@ impl Component for ProfileSelector {
                             other => Msg::Error(format!("Got unexpected: {:?}", other))
                         })>
                     {
-                        for Profile::into_enum_iter()
+                        for Profile::iter()
                             .map(|p: Profile| {
                                 let selected: bool = self.props.maybe_profile
                                     .as_ref()
