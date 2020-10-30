@@ -1,9 +1,9 @@
 #![recursion_limit = "1024"]
 
 mod known_pids;
+mod known_data;
 mod pidinfo;
 mod service_communication;
-mod data_type_registry;
 
 mod create_component;
 mod details_page;
@@ -11,6 +11,7 @@ mod search_component;
 
 mod pit_service;
 mod collection_service;
+mod data_type_registry;
 
 use std::{ops::Deref, cell::RefCell, rc::Rc};
 
@@ -18,6 +19,7 @@ use create_component::CreateComponent;
 use data_type_registry::Pid;
 use details_page::DetailsPage;
 use known_pids::*;
+use known_data::*;
 use pidinfo::PidInfo;
 use search_component::SearchComponent;
 use pit_service::PitService;
@@ -42,15 +44,19 @@ pub enum AppRoute {
 pub struct Model {
     link: ComponentLink<Self>,
     known_pids: Rc<RefCell<KnownPids>>,
+    known_data: Rc<RefCell<KnownData>>,
     pit_service: PitService,
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Debug)]
 pub enum Msg {
     AddDefaultItem,
-    AddPidItem(PidInfo),
-    ReplaceItemWithPid(Pid, PidInfo),
-    Remove(String),
+    PidAdd(PidInfo),  // overwrites if object with this pid exists
+    PidReplace(Pid, PidInfo),  // object with pid will be removed, new one will be added
+    PidRemove(String),  // object will be removed
+
+    DataAdd(Data, ComponentLink<DetailsPage>),  // overwrites if object with this pid exists
+    DataRemove(DataID),  // object will be removed
 
     RegisterFDO(PidInfo),
     UpdateFDO(PidInfo),
@@ -64,8 +70,9 @@ impl Component for Model {
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
         let known_pids: Rc<RefCell<KnownPids>> = Rc::new(RefCell::new(KnownPids::default()));
+        let known_data: Rc<RefCell<KnownData>> = Rc::new(RefCell::new(KnownData::default()));
         let pit_service = PitService::new(link.clone());
-        Self { link, known_pids, pit_service }
+        Self { link, known_pids, known_data, pit_service }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
@@ -76,19 +83,27 @@ impl Component for Model {
             Msg::AddDefaultItem => {
                 self.known_pids.borrow_mut().add_unregistered(self.link.clone());
             }
-            Msg::AddPidItem(item) => {
+            Msg::PidAdd(item) => {
                 self.known_pids.borrow_mut().insert(item.pid().clone(), item);
             },
-            Msg::Remove(pid) => {
+            Msg::PidRemove(pid) => {
                 self.known_pids.borrow_mut().remove(&pid);
             }
-            Msg::ReplaceItemWithPid(pid, record) => {
-                self.link.send_message(Msg::AddPidItem(record));
-                self.link.send_message(Msg::Remove(pid.deref().clone()))
+            Msg::PidReplace(pid, record) => {
+                self.link.send_message(Msg::PidAdd(record));
+                self.link.send_message(Msg::PidRemove(pid.deref().clone()))
             },
 
             Msg::RegisterFDO(mut record) => self.pit_service.register_pidinfo(&mut record),
             Msg::UpdateFDO(mut record) => self.pit_service.update_pidinfo(&mut record),
+            
+            Msg::DataAdd(data, callback) => {
+                let id: DataID = self.known_data.borrow_mut().add(data.clone());
+                callback.send_message(details_page::Msg::AnnounceData(id, data));
+            }
+            Msg::DataRemove(id) => {
+                self.known_data.borrow_mut().remove(&id);
+            }
         }
         true
     }

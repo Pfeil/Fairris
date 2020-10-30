@@ -40,7 +40,7 @@ impl PitService {
                             .as_str(),
                     )
                     .and_then(|record: PidRecord| {
-                        Ok(super::Msg::AddPidItem(
+                        Ok(super::Msg::PidAdd(
                             PidInfo::from_registered(record, model_link.clone()),
                         ))
                     })
@@ -69,7 +69,7 @@ impl PitService {
                             .as_str(),
                     )
                     .and_then(|record: PidRecord| {
-                        Ok(super::Msg::ReplaceItemWithPid(
+                        Ok(super::Msg::PidReplace(
                             old_pid.clone(), // might be registered or not
                             PidInfo::from_registered(record, model_link.clone()),
                         ))

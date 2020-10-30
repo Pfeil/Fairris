@@ -142,7 +142,7 @@ impl Component for CreateComponent {
                 let meta_pid = item.pid().clone();
                 self.props
                     .model_link
-                    .send_message(super::Msg::AddPidItem(item));
+                    .send_message(super::Msg::PidAdd(item));
                 let mut record = self.extract_record();
                 self.metadata_document.context = MetadataContext::Annotating;
                 self.metadata_document.resource = ResourceReference::Handle(meta_pid);
@@ -154,7 +154,7 @@ impl Component for CreateComponent {
                 // TODO think about showing a success message
                 self.props
                     .model_link
-                    .send_message(super::Msg::AddPidItem(item))
+                    .send_message(super::Msg::PidAdd(item))
             }
             Msg::Error(message) => log::error!("Received error: {}", message), // TODO think about showing an error message
             other => log::error!("Unimplemented message: {:?}", other),

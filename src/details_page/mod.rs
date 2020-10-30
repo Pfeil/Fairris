@@ -23,7 +23,14 @@ use date_modified_input::*;
 
 use yew::prelude::*;
 
-use crate::{Model, data_type_registry::{DateCreated, DateModified, DigitalObjectType, Etag, Locations, Pid, Policy, Profile, Version}, pidinfo::{PidInfo, State}};
+use crate::{
+    Model,
+    data_type_registry::{
+        DateCreated, DateModified, DigitalObjectType, Etag, Locations, Pid, Policy, Profile, Version
+    },
+    pidinfo::{PidInfo, State},
+    known_data::*,
+};
 
 pub struct DetailsPage {
     link: ComponentLink<Self>,
@@ -44,6 +51,7 @@ pub struct Props {
 pub enum Msg {
     ToggleEditMode,
     Publish,
+    AnnounceData(DataID, Data),
 
     ProfileChanged(Result<Profile, Pid>),
     DigitalObjectTypeChanged(Result<DigitalObjectType, Pid>),
@@ -78,7 +86,7 @@ impl Component for DetailsPage {
                 if !self.edit_mode {
                     self.props
                         .model_link
-                        .send_message(super::Msg::AddPidItem(self.props.record.clone()))
+                        .send_message(super::Msg::PidAdd(self.props.record.clone()))
                 }
             }
             Msg::Publish => {
@@ -93,6 +101,10 @@ impl Component for DetailsPage {
                     }
                 }
             }
+            Msg::AnnounceData(id, data) => {
+                // TODO notify the datawidget component that the data was created.
+            }
+
             Msg::ProfileChanged(p) => {
                 self.props.record.profile = p.map_err(|e| Some(e));
             }
