@@ -119,12 +119,15 @@ impl Component for Model {
 
     fn view(&self) -> Html {
         let known_pids = self.known_pids.clone();
+        let known_data = self.known_data.clone();
         let model_link = self.link.clone();
         let router_function = move |switch: AppRoute| match switch {
             AppRoute::Details { ref path } => known_pids.borrow().find(path).map_or_else(
                 || Self::view_record_not_found_page(path),
                 |item| {
-                    html! {<DetailsPage model_link=model_link.clone() record=item.clone() />}
+                    let data = known_data.borrow().find_data_for_record(&item);
+                    let data_descriptions = known_data.borrow().get_descriptions();
+                    html! {<DetailsPage model_link=model_link.clone() record=item.clone() data=data data_descriptions=data_descriptions />}
                 },
             ),
             AppRoute::Search => html! {<SearchComponent/>},

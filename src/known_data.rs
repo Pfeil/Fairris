@@ -7,10 +7,10 @@ use crate::{
 };
 
 use rand::prelude::*;
-use yew::prelude::*;
 use strum::IntoEnumIterator;
+use yew::prelude::*;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct KnownData {
     known_data: HashMap<DataID, Data>,
 }
@@ -61,6 +61,23 @@ impl KnownData {
         }
         self.known_data.insert(id, data);
         id
+    }
+
+    pub fn find_data_for_record(&self, item: &PidInfo) -> Option<(DataID, Data)> {
+        if let Some(id) = &item.data {
+            self.deref().get(&id).map(|data| (id.clone(), data.clone()))
+        } else {
+            // TODO here you may handle retrieving data out of the raw record inside the pidinfo
+            //      (map data info to data objects, send GET request to collection service, etc)
+            None
+        }
+    }
+
+    pub fn get_descriptions(&self) -> Vec<(DataID, String)> {
+        self.deref()
+            .iter()
+            .map(|(id, data)| (id.clone(), data.type_name()))
+            .collect()
     }
 }
 

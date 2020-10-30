@@ -1,10 +1,7 @@
 use std::convert::TryFrom;
 
 use super::{AppRoute, Model, Msg};
-use crate::{
-    data_type_registry::*,
-    service_communication::pit_record::PidRecord
-};
+use crate::{data_type_registry::*, service_communication::pit_record::PidRecord};
 use serde_json as json;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -15,6 +12,7 @@ pub struct PidInfo {
     record: PidRecord,
     state: State,
     model_link: ComponentLink<Model>,
+    pub data: Option<crate::known_data::DataID>,
 
     // The record will contain the published record (if published).
     // The variables below contain the local state.
@@ -42,6 +40,8 @@ impl PidInfo {
             record: PidRecord::default(),
             state: State::Unregistered,
             model_link,
+            data: None,
+
             profile: Ok(Profile::default()),
             digital_object_type: Ok(DigitalObjectType::default()),
             locations: Locations::default(),
@@ -78,6 +78,8 @@ impl PidInfo {
             record,
             state,
             model_link,
+            data: None,
+            
             profile,
             digital_object_type,
             locations,
