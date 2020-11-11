@@ -45,9 +45,9 @@ impl Component for PublishButton {
             html! {}
         } else {
             let (label, classes) = match self.props.state {
-                State::Unregistered => ("Publish object.", "publish-button"),
-                State::Modified => ("Publish object changes.", "update-button"),
-                State::Clean => ("Object state is published.", "inactive-button"),
+                State::Unregistered => ("Publish object", "publish-button"),
+                State::Modified => ("Publish object changes", "update-button"),
+                State::Clean => ("Object state is published", "inactive-button"),
             };
             let is_disabled = self.props.state == State::Clean;
             html! {

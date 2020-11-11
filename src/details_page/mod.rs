@@ -161,7 +161,7 @@ impl Component for DetailsPage {
 
                 <DataWidget data=self.props.data.clone() data_descriptions=self.props.data_descriptions.clone()/>
                 
-                <details class="two-column-lefty" open=true>
+                <details open=true>
                     <summary>{ "Record Metadata (raw)" }</summary>
                     <div class="two-column-lefty">{ data.view_record() }</div>
                 </details>
@@ -173,14 +173,16 @@ impl Component for DetailsPage {
                         <PublishButton form_link=self.link.clone() edit_mode=self.edit_mode state=self.props.record.state() />
                     </div>
                     
-                    <ProfileSelector form_link=self.link.clone() active=self.edit_mode maybe_profile=profile />
-                    <DigitalObjectTypeSelector form_link=self.link.clone() active=self.edit_mode maybe_type=digital_object_type/>
-                    <LocationsList form_link=self.link.clone() active=self.edit_mode locations=locations />
-                    <PolicyInput form_link=self.link.clone() active=self.edit_mode policy=policy />
-                    <EtagInput form_link=self.link.clone() active=self.edit_mode etag=etag />
-                    <DateCreatedInput form_link=self.link.clone() active=self.edit_mode date_created=date_created />
-                    <DateModifiedInput form_link=self.link.clone() active=self.edit_mode date_modified=date_modified />
-                    <VersionInput form_link=self.link.clone() active=self.edit_mode version=version />
+                    <div class="two-column-lefty">
+                        <ProfileSelector form_link=self.link.clone() active=self.edit_mode maybe_profile=profile />
+                        <DigitalObjectTypeSelector form_link=self.link.clone() active=self.edit_mode maybe_type=digital_object_type/>
+                        <LocationsList form_link=self.link.clone() active=self.edit_mode locations=locations />
+                        <PolicyInput form_link=self.link.clone() active=self.edit_mode policy=policy />
+                        <EtagInput form_link=self.link.clone() active=self.edit_mode etag=etag />
+                        <DateCreatedInput form_link=self.link.clone() active=self.edit_mode date_created=date_created />
+                        <DateModifiedInput form_link=self.link.clone() active=self.edit_mode date_modified=date_modified />
+                        <VersionInput form_link=self.link.clone() active=self.edit_mode version=version />
+                    </div>
                 </details>
 
             </div>

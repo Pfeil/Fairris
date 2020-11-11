@@ -48,26 +48,31 @@ impl Component for DataWidget {
     }
 
     fn view(&self) -> Html {
-        let name = "type_selection";
-        let (current_id, current_data) = self.props.data.clone().unwrap_or((DataID(0), Data::default()));
         html! {
             <details open=true>
                 <summary>{ "Data" }</summary>
-                <label class="form-description" for=name>{ "Type of your data:" }</label>
-                <select class="form-input" id=name
-                        onchange=self.link.callback(|e: ChangeData| match e {
-                            ChangeData::Select(element) => Msg::ChangedDataType(element.value()),
-                            other => Msg::Error(format!("Got unexpected: {:?}", other))
-                        })>
-                    {
-                        for Data::iter()
-                            .map(|data: Data| {
-                                let value = data.type_name();
-                                let selected = data.has_same_datatype_like(&current_data);
-                                html! { <option value=value selected=selected>{ value }</option> }
-                            })
-                    }
-                </select>
+                <div class="two-column-lefty header">
+                    <div class="stacking">
+                        <label class="form-description" for="data_chooser">{ "Create or reuse a data entry:" }</label>
+                        <select class="form-input" id="data_chooser"
+                            onchange=self.link.callback(|e: ChangeData| {Msg::Error("Unimplemented".into())})>
+                        <option value="new">{ "Create new data entry/reference." }</option>
+                            {
+                                for self.props.data_descriptions.iter()
+                                    .map(|(id, description): &(DataID, String)| {
+                                        html! { <option value=id>{ description }</option> }
+                                    })
+                            }
+                        </select>
+                    </div>
+
+                    <p>{
+                        r#"Here you reference and manage data. This represents the data that a real client would store locally,
+                        i.e. data that was inserted into the client or the client produced.
+                        You may reuse existing data references or create a new one."#
+                    }</p>
+                </div>
+
                 {
                     match self.props.data {
                         None => self.view_no_data_ui(),
@@ -85,21 +90,30 @@ impl DataWidget {
     fn view_no_data_ui(&self) -> Html {
         // new or select existing.
         // TODO if record is Clean (or modified), make sure the data is extracted from the record. (probably not here!)
+        let label_name = "type_selection";
         html! {
-            <>
-            <button class="ok-button">
-                { "CREATE" }
-            </button>
-            <select class="form-input" id="tmp"
-                    onchange=self.link.callback(|e: ChangeData| {Msg::Error("Unimplemented".into())})>
-                {
-                    for self.props.data_descriptions.iter()
-                        .map(|(value, description): &(DataID, String)| {
-                            html! { <option value=value>{ description }</option> }
-                        })
-                }
-            </select>
-            </>
+            <div class="two-column-lefty">
+                <div class="stacking">
+                    <label class="form-description" for=label_name>{ "Type of your data:" }</label>
+                    <select class="form-input" id=label_name
+                            onchange=self.link.callback(|e: ChangeData| match e {
+                                ChangeData::Select(element) => Msg::ChangedDataType(element.value()),
+                                other => Msg::Error(format!("Got unexpected: {:?}", other))
+                            })>
+                        {
+                            for Data::iter()
+                                .map(|data: Data| {
+                                    let value = data.type_name();
+                                    html! { <option value=value>{ value }</option> }
+                                })
+                        }
+                    </select>
+                </div>
+
+                <button class="ok-button">
+                    { "CREATE" }
+                </button>
+            </div>
         }
     }
     fn view_collection_ui(&self) -> Html {
