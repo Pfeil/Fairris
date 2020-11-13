@@ -1,12 +1,13 @@
-use std::{collections::HashMap, convert::TryFrom};
 use std::ops::{Deref, DerefMut};
+use std::{collections::HashMap, convert::TryFrom};
 
 use super::PidInfo;
 use crate::collection_service::collection::Collection;
 
 use rand::prelude::*;
+use strum::IntoEnumIterator;
 
-#[derive(Clone, PartialEq)]
+#[derive(Default, Clone, PartialEq)]
 pub struct KnownData {
     known_data: HashMap<DataID, Data>,
 }
@@ -85,25 +86,21 @@ impl Default for Data {
     }
 }
 
-impl Default for KnownData {
-    fn default() -> Self {
-        let image = AnnotatedImage {
-            url: "https://example.com/image.tiff".into(),
-            annotation_urls: vec!["https://example.com/anotation1.tiff".into(), "https://example.com/anotation2.tiff".into()],
-        };
-        let mut map = HashMap::new();
-        map.insert(DataID(1), Data::AnnotatedImage(image));
-        KnownData {
-            known_data: map,
-        }
-    }
-}
-
 impl TryFrom<String> for DataID {
     type Error = ();
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         value.parse().map(|ok| Self(ok)).map_err(|_error| ())
+    }
+}
+
+impl TryFrom<&String> for Data {
+    type Error = ();
+
+    fn try_from(value: &String) -> Result<Self, Self::Error> {
+        Data::iter()
+            .find(|d: &Data| d.type_name() == *value)
+            .ok_or(())
     }
 }
 

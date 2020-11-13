@@ -3,9 +3,8 @@ use std::{rc::Rc, cell::RefCell, convert::TryFrom};
 use yew::prelude::*;
 use strum::IntoEnumIterator;
 
-use crate::{known_data::{Data, DataID, KnownData}};
-
-use super::DetailsPage;
+use crate::{DetailsPage, known_data::{Data, DataID, KnownData}};
+use super::create_data_form::*;
 
 pub struct DataWidget {
     link: ComponentLink<Self>,
@@ -52,7 +51,7 @@ impl Component for DataWidget {
                     let data = self.props.known_data.borrow().get(&id).cloned();
                     data.and_then(|d| {
                         self.props.data = Some((id, d.clone()));
-                        self.props.detail_page.send_message(super::Msg::DataChanged(id, d.clone()));
+                        self.props.detail_page.send_message(crate::details_page::Msg::DataChanged(id, d.clone()));
                         Some(())
                     });
                 }
@@ -64,7 +63,7 @@ impl Component for DataWidget {
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         log::debug!("New Props for Data Widget: {:?}", props);
         self.props = props;
-        let dropdown = super::helpers::DOM::get_element::<web_sys::HtmlSelectElement, _>(DATA_CHOOSER_NAME);
+        let dropdown = crate::details_page::helpers::DOM::get_element::<web_sys::HtmlSelectElement, _>(DATA_CHOOSER_NAME);
         // TODO the unused result warning should remember you to also display a missing or unknown type.
         self.props.data.clone().map_or_else(
             || dropdown.set_value("new"),
@@ -110,7 +109,7 @@ impl Component for DataWidget {
 
                 {
                     match self.props.data {
-                        None => self.view_no_data_ui(),
+                        None => html!{<CreateData detail_page=self.props.detail_page.clone() model=self.props.model.clone()/>},//self.view_no_data_ui(),
                         _ => html! {<p>{"TODO"}</p>},
                     }
                 }
@@ -122,8 +121,8 @@ impl Component for DataWidget {
 
 
 impl DataWidget {
+    /// This UI is shown when creating a new data entry for a data set.
     fn view_no_data_ui(&self) -> Html {
-        // new or select existing.
         // TODO if record is Clean (or modified), make sure the data is extracted from the record. (probably not here!)
         let label_name = "type_selection";
         html! {

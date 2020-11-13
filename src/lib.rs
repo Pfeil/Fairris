@@ -58,7 +58,7 @@ pub enum Msg {
     PidReplace(Pid, PidInfo),  // object with pid will be removed, new one will be added
     PidRemove(String),  // object will be removed
 
-    DataAdd(Data, ComponentLink<DetailsPage>),  // overwrites if object with this pid exists
+    DataAdd(Data, Pid),  // overwrites if object with this pid exists
     DataRemove(DataID),  // object will be removed
 
     RegisterFDO(PidInfo),
@@ -100,9 +100,12 @@ impl Component for Model {
             Msg::RegisterFDO(mut record) => self.pit_service.register_pidinfo(&mut record),
             Msg::UpdateFDO(mut record) => self.pit_service.update_pidinfo(&mut record),
             
-            Msg::DataAdd(data, callback) => {
-                let id: DataID = self.known_data.borrow_mut().add(data.clone());
-                callback.send_message(details_page::Msg::AnnounceData(id, data));
+            Msg::DataAdd(data, pid) => {
+                log::debug!("Adding data {:?} to record {:?}", data, pid);
+                let id = self.known_data.borrow_mut().add(data.clone());
+                if let Some(record) = self.known_pids.borrow_mut().find_mut(&pid) {
+                    record.data = Some(id);
+                }
             }
             Msg::DataRemove(id) => {
                 self.known_data.borrow_mut().remove(&id);

@@ -57,7 +57,6 @@ pub struct Props {
 pub enum Msg {
     ToggleEditMode,
     Publish,
-    AnnounceData(DataID, Data),
 
     ProfileChanged(Result<Profile, Pid>),
     DigitalObjectTypeChanged(Result<DigitalObjectType, Pid>),
@@ -68,6 +67,8 @@ pub enum Msg {
     PolicyChanged(Policy),
     EtagChanged(Etag),
     DataChanged(DataID, Data),
+
+    DataNew(Data),
 }
 
 impl Component for DetailsPage {
@@ -108,9 +109,6 @@ impl Component for DetailsPage {
                     }
                 }
             }
-            Msg::AnnounceData(id, data) => {
-                self.props.current_data = Some((id, data));
-            }
 
             Msg::ProfileChanged(p) => {
                 self.props.record.profile = p.map_err(|e| Some(e));
@@ -127,6 +125,15 @@ impl Component for DetailsPage {
             Msg::DataChanged(id, _data) => {
                 self.props.record.data = Some(id);
                 self.props.model_link.send_message(super::Msg::PidAdd(self.props.record.clone()));
+            }
+            Msg::DataNew(data) => {
+                log::debug!("Got DataNew");
+                self.props.model_link.send_message(
+                    crate::Msg::DataAdd(
+                        data,
+                        Pid(self.props.record.pid().clone())
+                    )
+                )
             }
         }
         true
