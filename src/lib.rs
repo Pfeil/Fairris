@@ -126,8 +126,7 @@ impl Component for Model {
                 || Self::view_record_not_found_page(path),
                 |item| {
                     let data = known_data.borrow().find_data_for_record(&item);
-                    let data_descriptions = known_data.borrow().get_descriptions();
-                    html! {<DetailsPage model_link=model_link.clone() record=item.clone() data=data data_descriptions=data_descriptions />}
+                    html! {<DetailsPage model_link=model_link.clone() record=item.clone() current_data=data known_data=known_data.clone() />}
                 },
             ),
             AppRoute::Search => html! {<SearchComponent/>},

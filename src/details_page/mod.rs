@@ -11,6 +11,8 @@ mod date_created_input;
 mod date_modified_input;
 mod data_widget;
 
+use std::{rc::Rc, cell::RefCell};
+
 use type_selector::*;
 use edit_button::*;
 use profile_selector::*;
@@ -41,14 +43,14 @@ pub struct DetailsPage {
     edit_mode: bool,
 }
 
-#[derive(Properties, Clone)]
+#[derive(Properties, Clone, Debug)]
 pub struct Props {
     // A link to send messages to the application
     pub model_link: ComponentLink<Model>,
     // the record this details page represents
     pub record: PidInfo,
-    pub data: Option<(DataID, Data)>,
-    pub data_descriptions: Vec<(DataID, String)>,
+    pub current_data: Option<(DataID, Data)>,
+    pub known_data: Rc<RefCell<KnownData>>,
 }
 
 #[derive(Debug)]
@@ -65,6 +67,7 @@ pub enum Msg {
     VersionChanged(Version),
     PolicyChanged(Policy),
     EtagChanged(Etag),
+    DataChanged(DataID, Data),
 }
 
 impl Component for DetailsPage {
@@ -106,7 +109,7 @@ impl Component for DetailsPage {
                 }
             }
             Msg::AnnounceData(id, data) => {
-                self.props.data = Some((id, data));
+                self.props.current_data = Some((id, data));
             }
 
             Msg::ProfileChanged(p) => {
@@ -121,14 +124,21 @@ impl Component for DetailsPage {
             Msg::EtagChanged(etag) => self.props.record.etag = etag,
             Msg::DateCreatedChanged(date) => self.props.record.date_created = date,
             Msg::DateModifiedChanged(date) => self.props.record.date_modified = date,
+            Msg::DataChanged(id, _data) => {
+                self.props.record.data = Some(id);
+                self.props.model_link.send_message(super::Msg::PidAdd(self.props.record.clone()));
+            }
         }
         true
     }
 
     fn change(&mut self, props: Self::Properties) -> yew::ShouldRender {
-        let changed = self.props.record != props.record;
+        let changed = self.props.record != props.record
+            || self.props.current_data != props.current_data
+            || *self.props.known_data.borrow() != *props.known_data.borrow();
         if changed {
             self.reset_page_state();
+            log::debug!("Detail Page Change: {:?}", &props);
             self.props = props;
         }
         changed
@@ -159,7 +169,7 @@ impl Component for DetailsPage {
                     </div>
                 </div>
 
-                <DataWidget data=self.props.data.clone() data_descriptions=self.props.data_descriptions.clone()/>
+                <DataWidget model=self.props.model_link.clone() detail_page=self.link.clone() data=self.props.current_data.clone() known_data=self.props.known_data.clone()/>
                 
                 <details open=true>
                     <summary>{ "Record Metadata (raw)" }</summary>

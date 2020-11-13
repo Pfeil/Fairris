@@ -1,9 +1,9 @@
-use std::convert::TryFrom;
+use std::{rc::Rc, cell::RefCell, convert::TryFrom};
 
 use yew::prelude::*;
 use strum::IntoEnumIterator;
 
-use crate::{data_type_registry::{DigitalObjectType, Pid}, known_data::{AnnotatedImage, Data, DataID}};
+use crate::{known_data::{Data, DataID, KnownData}};
 
 use super::DetailsPage;
 
@@ -12,15 +12,20 @@ pub struct DataWidget {
     props: Props,
 }
 
-#[derive(Properties, Clone)]
+#[derive(Properties, Clone, Debug)]
 pub struct Props {
+    pub model: ComponentLink<crate::Model>,
+    pub detail_page: ComponentLink<DetailsPage>,
     pub data: Option<(DataID, Data)>,
-    pub data_descriptions: Vec<(DataID, String)>,
+    pub known_data: Rc<RefCell<KnownData>>,
 }
 
 #[derive(Debug)]
 pub enum Msg {
     ChangedDataType(String),
+
+    DataEmpty,
+    DataValue(String),
     Error(String),
 }
 
@@ -33,34 +38,64 @@ impl Component for DataWidget {
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
+        log::debug!("Data Widget got message: {:?}", msg);
         match msg {
             Msg::Error(e) => log::error!("Message not handled: {}", e),
             Msg::ChangedDataType(t) => {
                 // TODO change data object accordingly!
             },
+            Msg::DataEmpty => {
+                self.props.data = None;
+            },
+            Msg::DataValue(value) => {
+                if let Ok(id) = DataID::try_from(value) {
+                    let data = self.props.known_data.borrow().get(&id).cloned();
+                    data.and_then(|d| {
+                        self.props.data = Some((id, d.clone()));
+                        self.props.detail_page.send_message(super::Msg::DataChanged(id, d.clone()));
+                        Some(())
+                    });
+                }
+            }
         }
         true
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
+        log::debug!("New Props for Data Widget: {:?}", props);
         self.props = props;
+        let dropdown = super::helpers::DOM::get_element::<web_sys::HtmlSelectElement, _>(DATA_CHOOSER_NAME);
+        // TODO the unused result warning should remember you to also display a missing or unknown type.
+        self.props.data.clone().map_or_else(
+            || dropdown.set_value("new"),
+            |(id, _data)| dropdown.set_value(id.to_string().as_str())
+        );
         true
     }
 
     fn view(&self) -> Html {
+        log::debug!("Redraw Data Widget");
+        let nothing_is_selected = self.props.data == None;
         html! {
             <details open=true>
                 <summary>{ "Data" }</summary>
                 <div class="two-column-lefty header">
                     <div class="stacking">
-                        <label class="form-description" for="data_chooser">{ "Create or reuse a data entry:" }</label>
-                        <select class="form-input" id="data_chooser"
-                            onchange=self.link.callback(|e: ChangeData| {Msg::Error("Unimplemented".into())})>
-                        <option value="new">{ "Create new data entry/reference." }</option>
+                        <label class="form-description" for=DATA_CHOOSER_NAME>{ "Create or reuse a data entry:" }</label>
+                        <select class="form-input" id=DATA_CHOOSER_NAME
+                            onchange=self.link.callback(|value: ChangeData| match value {
+                                // e will be a data id or "new" as you can see in the code below.
+                                ChangeData::Select(element) if element.value() == "new" => Msg::DataEmpty,
+                                ChangeData::Select(element) => Msg::DataValue(element.value()),
+                                other => Msg::Error("Unexpected value in selector.".into()),
+                            })>
+                            <option value="new" selected=nothing_is_selected>{ "Create new data entry/reference." }</option>
                             {
-                                for self.props.data_descriptions.iter()
-                                    .map(|(id, description): &(DataID, String)| {
-                                        html! { <option value=id>{ description }</option> }
+                                for self.props.known_data.borrow().iter()
+                                    .map(|(dataid, data)| {
+                                        let selected = self.props.data.clone().and_then(|(id, _data)| Some(*dataid == id)).unwrap_or(false);
+                                        // TODO type name is not a good description.
+                                        html! { <option value=dataid selected=selected>{ format!("{} - {}", **dataid, data.type_name()) }</option> }
                                     })
                             }
                         </select>
@@ -154,3 +189,5 @@ impl DataWidget {
         }
     }
 }
+
+const DATA_CHOOSER_NAME: &str = "data_chooser";

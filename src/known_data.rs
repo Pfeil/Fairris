@@ -1,16 +1,12 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, convert::TryFrom};
 use std::ops::{Deref, DerefMut};
 
-use super::{Model, PidInfo};
-use crate::{
-    collection_service::collection::Collection, service_communication::primitive_types::Pid,
-};
+use super::PidInfo;
+use crate::collection_service::collection::Collection;
 
 use rand::prelude::*;
-use strum::IntoEnumIterator;
-use yew::prelude::*;
 
-#[derive(Default, Clone)]
+#[derive(Clone, PartialEq)]
 pub struct KnownData {
     known_data: HashMap<DataID, Data>,
 }
@@ -65,10 +61,12 @@ impl KnownData {
 
     pub fn find_data_for_record(&self, item: &PidInfo) -> Option<(DataID, Data)> {
         if let Some(id) = &item.data {
+            log::debug!("Found some data in record: {:?}", id);
             self.deref().get(&id).map(|data| (id.clone(), data.clone()))
         } else {
             // TODO here you may handle retrieving data out of the raw record inside the pidinfo
             //      (map data info to data objects, send GET request to collection service, etc)
+            log::warn!("Did not find existing data. Implement creating data here (maybe).");
             None
         }
     }
@@ -84,6 +82,34 @@ impl KnownData {
 impl Default for Data {
     fn default() -> Self {
         Data::AnnotatedImage(AnnotatedImage::default())
+    }
+}
+
+impl Default for KnownData {
+    fn default() -> Self {
+        let image = AnnotatedImage {
+            url: "https://example.com/image.tiff".into(),
+            annotation_urls: vec!["https://example.com/anotation1.tiff".into(), "https://example.com/anotation2.tiff".into()],
+        };
+        let mut map = HashMap::new();
+        map.insert(DataID(1), Data::AnnotatedImage(image));
+        KnownData {
+            known_data: map,
+        }
+    }
+}
+
+impl TryFrom<String> for DataID {
+    type Error = ();
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        value.parse().map(|ok| Self(ok)).map_err(|_error| ())
+    }
+}
+
+impl std::fmt::Debug for KnownData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "KnownData(...)")
     }
 }
 
