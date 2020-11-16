@@ -1,7 +1,6 @@
 use std::{rc::Rc, cell::RefCell, convert::TryFrom};
 
 use yew::prelude::*;
-use strum::IntoEnumIterator;
 
 use crate::{DetailsPage, known_data::{Data, DataID, KnownData}};
 use super::create_data_form::*;
@@ -21,8 +20,6 @@ pub struct Props {
 
 #[derive(Debug)]
 pub enum Msg {
-    ChangedDataType(String),
-
     DataEmpty,
     DataValue(String),
     Error(String),
@@ -40,9 +37,6 @@ impl Component for DataWidget {
         log::debug!("Data Widget got message: {:?}", msg);
         match msg {
             Msg::Error(e) => log::error!("Message not handled: {}", e),
-            Msg::ChangedDataType(t) => {
-                // TODO change data object accordingly!
-            },
             Msg::DataEmpty => {
                 self.props.data = None;
             },
@@ -109,82 +103,11 @@ impl Component for DataWidget {
 
                 {
                     match self.props.data {
-                        None => html!{<CreateData detail_page=self.props.detail_page.clone() model=self.props.model.clone()/>},//self.view_no_data_ui(),
+                        None => html!{<CreateData detail_page=self.props.detail_page.clone() model=self.props.model.clone()/>},
                         _ => html! {<p>{"TODO"}</p>},
                     }
                 }
             </details>
-        }
-    }
-}
-
-
-
-impl DataWidget {
-    /// This UI is shown when creating a new data entry for a data set.
-    fn view_no_data_ui(&self) -> Html {
-        // TODO if record is Clean (or modified), make sure the data is extracted from the record. (probably not here!)
-        let label_name = "type_selection";
-        html! {
-            <div class="two-column-lefty">
-                <div class="stacking">
-                    <label class="form-description" for=label_name>{ "Type of your data:" }</label>
-                    <select class="form-input" id=label_name
-                            onchange=self.link.callback(|e: ChangeData| match e {
-                                ChangeData::Select(element) => Msg::ChangedDataType(element.value()),
-                                other => Msg::Error(format!("Got unexpected: {:?}", other))
-                            })>
-                        {
-                            for Data::iter()
-                                .map(|data: Data| {
-                                    let value = data.type_name();
-                                    html! { <option value=value>{ value }</option> }
-                                })
-                        }
-                    </select>
-                </div>
-
-                <button class="ok-button">
-                    { "CREATE" }
-                </button>
-            </div>
-        }
-    }
-    fn view_collection_ui(&self) -> Html {
-        match &self.props.data {
-            Some((id, data)) => {
-                html! {
-
-                }
-            }
-            None => {
-                html! {
-                    <button class="ok-button">
-                        { "CREATE" }
-                    </button>
-                }
-            }
-        }
-    }
-
-    fn view_annotated_image_ui(&self) -> Html {
-        let name = "Image URL";
-        let (id, content, annotations) =
-            match self.props.data.clone() {
-                Some((id, Data::AnnotatedImage(data))) => (id, data.url, data.annotation_urls),
-                None => (DataID(0), "".into(), vec!["".into()]),
-                _ => (DataID(0), "error?".into(), vec!["error?".into()])
-            };
-
-        html! {
-            <>
-                <label class="form-description" for=name>{ name }</label>
-                <input class="form-input" id=name value=content
-                    onchange=self.link.callback(|e: ChangeData| match e {
-                        other => Msg::Error(format!("Got unexpected: {:?}", other))
-                    })
-                />
-            </>
         }
     }
 }

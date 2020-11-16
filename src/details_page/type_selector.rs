@@ -50,8 +50,9 @@ impl Component for DigitalObjectTypeSelector {
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         self.props = props.clone();
         let dropdown = DOM::get_element::<HtmlSelectElement, _>(DigitalObjectType::get_key_name());
-        // TODO the unused result warning should remember you to also display a missing or unknown type.
-        props.maybe_type.map(|t| dropdown.set_value(&*Pid::from(&t)));
+        if let Ok(t) = &props.maybe_type {
+            dropdown.set_value(&*Pid::from(t))
+        }
         true
     }
 

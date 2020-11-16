@@ -50,8 +50,9 @@ impl Component for ProfileSelector {
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         self.props = props.clone();
         let dropdown = DOM::get_element::<HtmlSelectElement, _>(Profile::get_key_name());
-        // TODO the unused result warning should remember you to also display a missing or unknown type.
-        props.maybe_profile.map(|profile| dropdown.set_value(&*Pid::from(&profile)));
+        if let Ok(profile) = &props.maybe_profile {
+            dropdown.set_value(&*Pid::from(profile))
+        }
         true
     }
 

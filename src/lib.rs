@@ -8,7 +8,6 @@ mod known_data;
 mod pidinfo;
 mod service_communication;
 
-mod create_component;
 mod details_page;
 mod search_component;
 
@@ -18,7 +17,6 @@ mod data_type_registry;
 
 use std::{ops::Deref, cell::RefCell, rc::Rc};
 
-use create_component::CreateComponent;
 use data_type_registry::Pid;
 use details_page::DetailsPage;
 use known_pids::*;

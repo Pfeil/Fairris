@@ -37,13 +37,11 @@ impl Component for CreateData {
         match msg {
             Msg::Datatype(stringname) => self.datatype = stringname,
             Msg::ButtonClick => {
-                Data::try_from(&self.datatype).and_then(|d| {
-                    self.props.detail_page.send_message(crate::details_page::Msg::DataNew(d.clone()));
-                    Ok(())
-                })
-                .map_err(|_| {
+                if let Ok(data) = Data::try_from(&self.datatype) {
+                    self.props.detail_page.send_message(crate::details_page::Msg::DataNew(data.clone()));
+                } else {
                     log::error!("Could not parse a data entry from {}", &self.datatype);
-                });
+                };
             }
             Msg::Error(e) => log::error!("Error: {}", e),
         }
