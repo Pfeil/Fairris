@@ -1,9 +1,12 @@
-use std::{rc::Rc, cell::RefCell, convert::TryFrom};
+use std::{cell::RefCell, convert::TryFrom, rc::Rc};
 
 use yew::prelude::*;
 
-use crate::{DetailsPage, known_data::{Data, DataID, KnownData}};
 use super::create_data_form::*;
+use crate::{
+    known_data::{Data, DataID, KnownData},
+    DetailsPage,
+};
 
 pub struct DataWidget {
     link: ComponentLink<Self>,
@@ -39,15 +42,17 @@ impl Component for DataWidget {
             Msg::Error(e) => log::error!("Message not handled: {}", e),
             Msg::DataEmpty => {
                 self.props.data = None;
-            },
+            }
             Msg::DataValue(value) => {
                 if let Ok(id) = DataID::try_from(value) {
+                    // TODO use yew-state
                     let data = self.props.known_data.borrow().get(&id).cloned();
-                    data.and_then(|d| {
-                        self.props.data = Some((id, d.clone()));
-                        self.props.detail_page.send_message(crate::details_page::Msg::DataChanged(id, d.clone()));
-                        Some(())
-                    });
+                    if let Some(data) = data {
+                        self.props.data = Some((id, data.clone()));
+                        self.props
+                            .detail_page
+                            .send_message(crate::details_page::Msg::DataChanged(id, data.clone()));
+                    }
                 }
             }
         }
@@ -57,11 +62,12 @@ impl Component for DataWidget {
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         log::debug!("New Props for Data Widget: {:?}", props);
         self.props = props;
-        let dropdown = crate::details_page::helpers::DOM::get_element::<web_sys::HtmlSelectElement, _>(DATA_CHOOSER_NAME);
+        use crate::details_page::helpers::DOM;
+        let dropdown = DOM::get_element::<web_sys::HtmlSelectElement, _>(DATA_CHOOSER_NAME);
         // TODO the unused result warning should remember you to also display a missing or unknown type.
         self.props.data.clone().map_or_else(
             || dropdown.set_value("new"),
-            |(id, _data)| dropdown.set_value(id.to_string().as_str())
+            |(id, _data)| dropdown.set_value(id.to_string().as_str()),
         );
         true
     }

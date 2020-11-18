@@ -1,9 +1,9 @@
 use std::convert::TryFrom;
 
-use yew::prelude::*;
 use strum::IntoEnumIterator;
+use yew::prelude::*;
 
-use crate::{known_data::Data, details_page::DetailsPage};
+use crate::{details_page::DetailsPage, known_data::Data};
 
 pub struct CreateData {
     link: ComponentLink<Self>,
@@ -30,7 +30,11 @@ impl Component for CreateData {
     type Properties = Props;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        Self { link, props, datatype: Data::default().type_name() }
+        Self {
+            link,
+            props,
+            datatype: Data::default().type_name(),
+        }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
@@ -38,7 +42,9 @@ impl Component for CreateData {
             Msg::Datatype(stringname) => self.datatype = stringname,
             Msg::ButtonClick => {
                 if let Ok(data) = Data::try_from(&self.datatype) {
-                    self.props.detail_page.send_message(crate::details_page::Msg::DataNew(data.clone()));
+                    self.props
+                        .detail_page
+                        .send_message(crate::details_page::Msg::DataNew(data.clone()));
                 } else {
                     log::error!("Could not parse a data entry from {}", &self.datatype);
                 };
@@ -55,15 +61,16 @@ impl Component for CreateData {
 
     fn view(&self) -> Html {
         let label_name = "type_selection";
+        let on_entry_selection_change = self.link.callback(|e: ChangeData| match e {
+            ChangeData::Select(element) => Msg::Datatype(element.value()),
+            other => Msg::Error(format!("Got unexpected: {:?}", other)),
+        });
         html! {
             <div class="two-column-lefty">
                 <div class="stacking">
                     <label class="form-description" for=label_name>{ "Type of your data:" }</label>
                     <select class="form-input" id=label_name
-                            onchange=self.link.callback(|e: ChangeData| match e {
-                                ChangeData::Select(element) => Msg::Datatype(element.value()),
-                                other => Msg::Error(format!("Got unexpected: {:?}", other)),
-                            })>
+                            onchange=on_entry_selection_change>
                         {
                             for Data::iter()
                                 .map(|data: Data| {
