@@ -122,8 +122,9 @@ impl Component for DetailsPage {
             Msg::EtagChanged(etag) => self.props.record.etag = etag,
             Msg::DateCreatedChanged(date) => self.props.record.date_created = date,
             Msg::DateModifiedChanged(date) => self.props.record.date_modified = date,
-            Msg::DataChanged(id, _data) => {
+            Msg::DataChanged(id, data) => {
                 self.props.record.data = Some(id);
+                self.props.model_link.send_message(super::Msg::DataModify(id, data));
                 self.props.model_link.send_message(super::Msg::PidAdd(self.props.record.clone()));
             }
             Msg::DataNew(data) => {

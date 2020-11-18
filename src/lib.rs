@@ -56,7 +56,8 @@ pub enum Msg {
     PidReplace(Pid, PidInfo),  // object with pid will be removed, new one will be added
     PidRemove(String),  // object will be removed
 
-    DataAdd(Data, Pid),  // overwrites if object with this pid exists
+    DataAdd(Data, Pid),  // overwrites records data id if record exists. DOES NOT UPDATE DATA!
+    DataModify(DataID, Data),  // create or modify data object
     DataRemove(DataID),  // object will be removed
 
     RegisterFDO(PidInfo),
@@ -104,6 +105,9 @@ impl Component for Model {
                 if let Some(record) = self.known_pids.borrow_mut().find_mut(&pid) {
                     record.data = Some(id);
                 }
+            }
+            Msg::DataModify(id, data) => {
+                self.known_data.borrow_mut().insert(id, data);
             }
             Msg::DataRemove(id) => {
                 self.known_data.borrow_mut().remove(&id);

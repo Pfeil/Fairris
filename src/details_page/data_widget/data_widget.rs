@@ -3,6 +3,7 @@ use std::{cell::RefCell, convert::TryFrom, rc::Rc};
 use yew::prelude::*;
 
 use super::create_data_form::*;
+use super::annotated_image_form::*;
 use crate::{
     known_data::{Data, DataID, KnownData},
     DetailsPage,
@@ -108,9 +109,10 @@ impl Component for DataWidget {
                 </div>
 
                 {
-                    match self.props.data {
+                    match &self.props.data {
                         None => html!{<CreateData detail_page=self.props.detail_page.clone() model=self.props.model.clone()/>},
-                        _ => html! {<p>{"TODO"}</p>},
+                        Some((id, Data::AnnotatedImage(image))) => html! {<AnnotatedImageForm id=id image=image detail_page=self.props.detail_page.clone() />},
+                        _ => html! {<p>{"UI unimplemented."}</p>},
                     }
                 }
             </details>
