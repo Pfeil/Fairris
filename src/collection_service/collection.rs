@@ -10,11 +10,17 @@ pub struct Collection {
     #[serde(skip_serializing)]
     id: String,
     #[serde(skip_serializing_if = "String::is_empty")]
-    description: String,
+    pub description: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    properties: Option<CollectionProperties>,
+    pub properties: Option<CollectionProperties>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    capabilities: Option<CollectionCapabilities>,
+    pub capabilities: Option<CollectionCapabilities>,
+}
+
+impl Collection {
+    pub fn get_id(&self) -> &str {
+        self.id.as_str()
+    }
 }
 
 pub struct Collections(Vec<Collection>);

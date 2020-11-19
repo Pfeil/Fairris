@@ -87,10 +87,6 @@ p {
     margin: 0.5em;
 }
 
-#content button {
-    display: block;
-}
-
 .ok-button {
     font-size: larger;
     background-color: var(--color-ok);
@@ -132,15 +128,17 @@ p {
 }
 
 .column-form {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    /*grid-template-columns: repeat(2, 1fr);*/
     margin-top: 1em;
     margin-bottom: 1em;
+    justify-content: center;
 }
 
 .column-form > * {
     margin-left: 1em;
     margin-right: 1em;
+    width: auto;
 }
 
 .scroll-vertical {
