@@ -9,8 +9,8 @@ use super::{collection_capabilities::CollectionCapabilities, collection_properti
 pub struct Collection {
     #[serde(skip_serializing)]
     id: String,
-    #[serde(skip_serializing_if = "String::is_empty")]
-    pub description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<CollectionProperties>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -23,7 +23,20 @@ impl Collection {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Collections(Vec<Collection>);
+
+impl From<Vec<Collection>> for Collections {
+    fn from(v: Vec<Collection>) -> Self {
+        Self(v)
+    }
+}
+
+impl From<Collection> for Collections {
+    fn from(c: Collection) -> Self {
+        Self(vec![c])
+    }
+}
 
 impl Deref for Collections {
     type Target = Vec<Collection>;

@@ -12,6 +12,7 @@ pub struct Props {
     pub id: DataID,
     pub collection: Collection,
     pub detail_page: ComponentLink<DetailsPage>,
+    pub model: ComponentLink<crate::Model>,
 }
 
 #[derive(Debug)]
@@ -37,12 +38,20 @@ impl Component for CollectionForm {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::DescriptionChanged(description) => {
-                self.props.collection.description = description;
+                if description.is_empty() {
+                    self.props.collection.description = None;
+                } else {
+                    self.props.collection.description = Some(description);
+                }
                 self.update_data();
             }
             Msg::PublishClicked => {
-                // TODO create or update collection
-                //self.props.detail_page.send_message(crate::details_page::Msg::)
+                let id = self.props.id.clone();
+                if self.props.collection.get_id().is_empty() {
+                    self.props.model.send_message(crate::Msg::DataRegister(id))
+                } else {
+                    self.props.model.send_message(crate::Msg::DataUpdate(id))
+                }
             }
             Msg::Error(e) => log::error!("Error: {}", e),
         }
@@ -60,7 +69,11 @@ impl Component for CollectionForm {
             id = "No id yet (collection not registered)"
         }
         let id = id;
-        let description = self.props.collection.description.as_str();
+        let description = if let Some(d) = &self.props.collection.description {
+            d.as_str()
+        } else {
+            ""
+        };
         let on_description_changed = self.link.callback(|c: ChangeData| match c {
             ChangeData::Value(description) => Msg::DescriptionChanged(description),
             other => Msg::Error(format!("Unexpected change: {:?}", other)),

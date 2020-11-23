@@ -17,6 +17,7 @@ mod data_type_registry;
 
 use std::{ops::Deref, cell::RefCell, rc::Rc};
 
+use collection_service::CollectionService;
 use data_type_registry::Pid;
 use details_page::DetailsPage;
 use known_pids::*;
@@ -47,6 +48,7 @@ pub struct Model {
     known_pids: Rc<RefCell<KnownPids>>,
     known_data: Rc<RefCell<KnownData>>,
     pit_service: PitService,
+    collection_service: Box<dyn Bridge<CollectionService>>,
 }
 
 #[derive(Debug)]
@@ -58,7 +60,10 @@ pub enum Msg {
 
     DataAdd(Data, Pid),  // overwrites records data id if record exists. DOES NOT UPDATE DATA!
     DataModify(DataID, Data),  // create or modify data object
+    DataModifyBatch(Vec<(DataID, Data)>),  // like Modify but for a lot of data
     DataRemove(DataID),  // object will be removed
+    DataRegister(DataID),  // calls collection_api/register
+    DataUpdate(DataID),  // calls collection_api/update
 
     RegisterFDO(PidInfo),
     UpdateFDO(PidInfo),
@@ -74,7 +79,20 @@ impl Component for Model {
         let known_pids: Rc<RefCell<KnownPids>> = Rc::new(RefCell::new(KnownPids::default()));
         let known_data: Rc<RefCell<KnownData>> = Rc::new(RefCell::new(KnownData::default()));
         let pit_service = PitService::new(link.clone());
-        Self { link, known_pids, known_data, pit_service }
+        let collection_service = CollectionService::bridge(link.callback(|response| {
+            match response {
+                collection_service::Response::Registered(collections) => {
+                    let collections = collections.into_iter().map(|(id, coll)| (id, Data::Collection(coll))).collect();
+                    Msg::DataModifyBatch(collections)
+                },
+                collection_service::Response::Updated(collections) => {
+                    let collections = collections.into_iter().map(|(id, coll)| (id, Data::Collection(coll))).collect();
+                    Msg::DataModifyBatch(collections)
+                },
+                collection_service::Response::Error(e) => Msg::Error(e)
+            }
+        }));
+        Self { link, known_pids, known_data, pit_service, collection_service }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
@@ -109,8 +127,28 @@ impl Component for Model {
             Msg::DataModify(id, data) => {
                 self.known_data.borrow_mut().insert(id, data);
             }
+            Msg::DataModifyBatch(datasets) => {
+                let messages: Vec<Msg> = datasets.into_iter().map(|(id, data)| Msg::DataModify(id, data)).collect();
+                self.link.send_message_batch(messages);
+            }
             Msg::DataRemove(id) => {
                 self.known_data.borrow_mut().remove(&id);
+            }
+            Msg::DataRegister(id) => {
+                let data = self.known_data.borrow_mut().get(&id).cloned();
+                match data {
+                    Some(Data::AnnotatedImage(_image)) => log::error!("Unimplemented: Tried to register image data."),
+                    Some(Data::Collection(collection)) => self.collection_service.send(collection_service::Request::Register(vec![(id, collection)])),
+                    None => log::error!("ERROR: Tried to register data that is not in app state (yet).")
+                }
+            }
+            Msg::DataUpdate(id) => {
+                let data = self.known_data.borrow_mut().get(&id).cloned();
+                match data {
+                    Some(Data::AnnotatedImage(_image)) => log::error!("Unimplemented: Tried to register image data."),
+                    Some(Data::Collection(collection)) => self.collection_service.send(collection_service::Request::Update(vec![(id, collection)])),
+                    None => log::error!("ERROR: Tried to register data that is not in app state (yet).")
+                }
             }
         }
         true

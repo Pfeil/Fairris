@@ -4,19 +4,19 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct CollectionProperties {
     #[serde(skip_serializing)]
-    id: String,
+    id: Option<String>,
     #[serde(skip_serializing)]
     date_created: String,
-    #[serde(skip_serializing_if = "String::is_empty")]
-    ownership: String,
-    #[serde(skip_serializing_if = "String::is_empty")]
-    license: String,
-    #[serde(skip_serializing_if = "String::is_empty")]
-    model_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ownership: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    license: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    model_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     has_access_restrictions: Option<bool>,
     #[serde(skip_serializing)]
     member_of: Vec<String>,
-    #[serde(skip_serializing_if = "String::is_empty")]
-    description_ontology: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    description_ontology: Option<String>,
 }
