@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use super::{AppRoute, Model, Msg};
-use crate::{data_type_registry::*, service_communication::pit_record::PidRecord};
+use crate::{app_state::data::DataID, data_type_registry::*, service_communication::pit_record::PidRecord};
 use serde_json as json;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -11,8 +11,7 @@ pub struct PidInfo {
     // The published record (if published)
     record: PidRecord,
     state: State,
-    model_link: ComponentLink<Model>,
-    pub data: Option<crate::known_data::DataID>,
+    pub data: Option<DataID>,
 
     // The record will contain the published record (if published).
     // The variables below contain the local state.
@@ -35,24 +34,6 @@ pub enum State {
 }
 
 impl PidInfo {
-    pub fn default(model_link: ComponentLink<Model>) -> Self {
-        PidInfo {
-            record: PidRecord::default(),
-            state: State::Unregistered,
-            model_link,
-            data: None,
-
-            profile: Ok(Profile::default()),
-            digital_object_type: Ok(DigitalObjectType::default()),
-            locations: Locations::default(),
-            date_created: DateCreated::default(),
-            date_modified: DateModified::default(),
-            etag: Etag::default(),
-            policy: Policy::default(),
-            version: Version::default(),
-        }
-    }
-
     pub fn from_registered(record: PidRecord, model_link: ComponentLink<Model>) -> Self {
         Self::from(record, State::Clean, model_link)
     }
@@ -77,7 +58,6 @@ impl PidInfo {
         Self {
             record,
             state,
-            model_link,
             data: None,
             
             profile,
@@ -139,21 +119,6 @@ impl PidInfo {
         self.record.describe()
     }
 
-    pub fn view_as_list_item(&self) -> Html {
-        let pid = self.record.pid.clone();
-        let pid2 = pid.clone();
-        html! {
-                <div class="piditem">
-                <RouterButton<AppRoute> route=AppRoute::Details{path: pid} classes="fdo-button">
-                    <p>{ self.record.pid.as_str() }</p>
-                    <p>{ self.record.describe() }</p>
-                    <p>{ format!("{:?}", self.state) }</p>
-                </RouterButton<AppRoute>>
-                <button onclick=self.model_link.callback( move |_| Msg::PidRemove(pid2.clone()) ) class="fdo-remove-button">{"✗"}</button>
-                </div>
-        }
-    }
-
     pub fn view_record(&self) -> Html {
         self.record
             .entries
@@ -169,6 +134,25 @@ impl PidInfo {
                 }
             })
             .collect()
+    }
+}
+
+impl Default for PidInfo {
+    fn default() -> Self {
+        PidInfo {
+            record: PidRecord::default(),
+            state: State::Unregistered,
+            data: None,
+
+            profile: Ok(Profile::default()),
+            digital_object_type: Ok(DigitalObjectType::default()),
+            locations: Locations::default(),
+            date_created: DateCreated::default(),
+            date_modified: DateModified::default(),
+            etag: Etag::default(),
+            policy: Policy::default(),
+            version: Version::default(),
+        }
     }
 }
 

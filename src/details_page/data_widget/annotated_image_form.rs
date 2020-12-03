@@ -1,17 +1,18 @@
-use yew::prelude::*;
+use yew::{agent::Dispatcher, prelude::*};
 
-use crate::{details_page::DetailsPage, known_data::{AnnotatedImage, Data, DataID}};
+use crate::app_state::{data::{AnnotatedImage, Data, DataID}, data_manager::DataManager};
 
 pub struct AnnotatedImageForm {
     link: ComponentLink<Self>,
     props: Props,
+
+    data_manager: Dispatcher<DataManager>,
 }
 
 #[derive(Properties, Clone)]
 pub struct Props {
     pub id: DataID,
     pub image: AnnotatedImage,
-    pub detail_page: ComponentLink<DetailsPage>,
 }
 
 #[derive(Debug)]
@@ -29,6 +30,7 @@ impl Component for AnnotatedImageForm {
         Self {
             link,
             props,
+            data_manager: DataManager::dispatcher(),
         }
     }
 
@@ -81,9 +83,11 @@ const URL_FIELD_NAME: &str = "url_field";
 const ANNOS_FIELD_NAME: &str = "annos_field";
 
 impl AnnotatedImageForm {
-    fn update_data(&self) {
+    fn update_data(&mut self) {
+        use crate::app_state::data_manager::Incoming;
+
         let data = Data::AnnotatedImage(self.props.image.clone());
         let id = self.props.id;
-        self.props.detail_page.send_message(crate::details_page::Msg::DataChanged(id, data))
+        self.data_manager.send(Incoming::UpdateData(id, data));
     }
 }

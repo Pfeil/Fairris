@@ -1,22 +1,21 @@
 use std::convert::TryFrom;
 
 use strum::IntoEnumIterator;
-use yew::prelude::*;
+use yew::{agent::Dispatcher, prelude::*};
 
-use crate::{details_page::DetailsPage, known_data::Data};
+use crate::app_state::{data::Data, data_manager::{DataManager, Incoming}};
 
 pub struct CreateData {
     link: ComponentLink<Self>,
     props: Props,
 
+    data_manager: Dispatcher<DataManager>,
+
     datatype: String,
 }
 
 #[derive(Properties, Clone)]
-pub struct Props {
-    pub detail_page: ComponentLink<DetailsPage>,
-    pub model: ComponentLink<crate::Model>,
-}
+pub struct Props {}
 
 #[derive(Debug)]
 pub enum Msg {
@@ -33,6 +32,7 @@ impl Component for CreateData {
         Self {
             link,
             props,
+            data_manager: DataManager::dispatcher(),
             datatype: Data::default().type_name(),
         }
     }
@@ -41,11 +41,9 @@ impl Component for CreateData {
         match msg {
             Msg::Datatype(stringname) => self.datatype = stringname,
             Msg::ButtonClick => {
-                if let Ok(data) = Data::try_from(&self.datatype) {
-                    self.props
-                        .detail_page
-                        .send_message(crate::details_page::Msg::DataNew(data.clone()));
-                } else {
+                let maybe_data = Data::try_from(&self.datatype).ok();
+                self.data_manager.send( Incoming::AddAndSelectData(maybe_data.clone()));
+                if let None = maybe_data {
                     log::error!("Could not parse a data entry from {}", &self.datatype);
                 };
             }
@@ -65,19 +63,17 @@ impl Component for CreateData {
             ChangeData::Select(element) => Msg::Datatype(element.value()),
             other => Msg::Error(format!("Got unexpected: {:?}", other)),
         });
+        let datatype_list = Data::iter().map(|data: Data| {
+            let value = data.type_name();
+            html! { <option value=value>{ value }</option> }
+        });
+
         html! {
             <div class="two-column-lefty">
                 <div class="stacking">
                     <label class="form-description" for=label_name>{ "Type of your data:" }</label>
-                    <select class="form-input" id=label_name
-                            onchange=on_entry_selection_change>
-                        {
-                            for Data::iter()
-                                .map(|data: Data| {
-                                    let value = data.type_name();
-                                    html! { <option value=value>{ value }</option> }
-                                })
-                        }
+                    <select class="form-input" id=label_name onchange=on_entry_selection_change>
+                        { for datatype_list }
                     </select>
                 </div>
 

@@ -3,28 +3,28 @@
 #[macro_use]
 extern crate strum;
 
-mod known_pids;
-mod known_data;
+mod app_state;
 mod pidinfo;
-mod service_communication;
+mod pidinfo_viewer;
 
 mod details_page;
 mod search_component;
 
-mod pit_service;
-mod collection_service;
+mod service_communication;
 mod data_type_registry;
 
-use std::{ops::Deref, cell::RefCell, rc::Rc};
+mod pit_service;
+mod collection_service;
 
-use collection_service::CollectionService;
+use std::collections::HashMap;
+
+use app_state::pid_manager::PidManager;
 use data_type_registry::Pid;
 use details_page::DetailsPage;
-use known_pids::*;
-use known_data::*;
 use pidinfo::PidInfo;
 use search_component::SearchComponent;
 use pit_service::PitService;
+use pidinfo_viewer::PidInfoView;
 
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
@@ -45,10 +45,10 @@ pub enum AppRoute {
 
 pub struct Model {
     link: ComponentLink<Self>,
-    known_pids: Rc<RefCell<KnownPids>>,
-    known_data: Rc<RefCell<KnownData>>,
     pit_service: PitService,
-    collection_service: Box<dyn Bridge<CollectionService>>,
+
+    pid_manager: Box<dyn Bridge<PidManager>>,
+    known_pids: HashMap<Pid, PidInfo>,
 }
 
 #[derive(Debug)]
@@ -56,18 +56,12 @@ pub enum Msg {
     AddDefaultItem,
     PidAdd(PidInfo),  // overwrites if object with this pid exists
     PidReplace(Pid, PidInfo),  // object with pid will be removed, new one will be added
-    PidRemove(String),  // object will be removed
-
-    DataAdd(Data, Pid),  // overwrites records data id if record exists. DOES NOT UPDATE DATA!
-    DataModify(DataID, Data),  // create or modify data object
-    DataModifyBatch(Vec<(DataID, Data)>),  // like Modify but for a lot of data
-    DataRemove(DataID),  // object will be removed
-    DataRegister(DataID),  // calls collection_api/register
-    DataUpdate(DataID),  // calls collection_api/update
+    PidRemove(Pid),  // object will be removed
 
     RegisterFDO(PidInfo),
     UpdateFDO(PidInfo),
 
+    UpdatePidInfoList(HashMap<Pid, PidInfo>),
     Error(String),
 }
 
@@ -76,102 +70,71 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let known_pids: Rc<RefCell<KnownPids>> = Rc::new(RefCell::new(KnownPids::default()));
-        let known_data: Rc<RefCell<KnownData>> = Rc::new(RefCell::new(KnownData::default()));
+        use crate::app_state::pid_manager::Incoming;
+
         let pit_service = PitService::new(link.clone());
-        let collection_service = CollectionService::bridge(link.callback(|response| {
-            match response {
-                collection_service::Response::Registered(collections) => {
-                    let collections = collections.into_iter().map(|(id, coll)| (id, Data::Collection(coll))).collect();
-                    Msg::DataModifyBatch(collections)
-                },
-                collection_service::Response::Updated(collections) => {
-                    let collections = collections.into_iter().map(|(id, coll)| (id, Data::Collection(coll))).collect();
-                    Msg::DataModifyBatch(collections)
-                },
-                collection_service::Response::Error(e) => Msg::Error(e)
+        let mut pid_manager = PidManager::bridge(link.callback(|msg| {
+            log::debug!("Lib received list with PidInfos: {:?}", msg);
+            match msg {
+                app_state::pid_manager::Outgoing::AllPidInformation(infos) => Msg::UpdatePidInfoList(infos),
             }
         }));
-        Self { link, known_pids, known_data, pit_service, collection_service }
+        pid_manager.send(Incoming::GetAllPidInformation);
+        Self { link, pit_service, pid_manager, known_pids: Default::default() }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
+        use crate::app_state::pid_manager::Incoming;
+
         log::debug!("Model received update {:?}", msg);
         match msg {
             Msg::Error(issue) => log::error!("Something went wrong: {}", issue),
+            Msg::UpdatePidInfoList(list) => self.known_pids = list,
 
             Msg::AddDefaultItem => {
-                self.known_pids.borrow_mut().add_unregistered(self.link.clone());
+                //self.known_pids.borrow_mut().add_unregistered(self.link.clone());
+                self.pid_manager.send(Incoming::AddUnregisteredItem);
             }
             Msg::PidAdd(item) => {
-                self.known_pids.borrow_mut().insert(item.pid().clone(), item);
+                //self.known_pids.borrow_mut().insert(item.pid().clone(), item);
+                //let pid = item.pid().clone();
+                self.pid_manager.send( Incoming::AddPidInfo(item) );
             },
             Msg::PidRemove(pid) => {
-                self.known_pids.borrow_mut().remove(&pid);
+                //self.known_pids.borrow_mut().remove(&pid);
+                self.pid_manager.send( Incoming::RemovePidInfo(pid) );
             }
             Msg::PidReplace(pid, record) => {
-                self.link.send_message(Msg::PidAdd(record));
-                self.link.send_message(Msg::PidRemove(pid.deref().clone()))
+                //self.link.send_message(Msg::PidAdd(record));
+                //self.link.send_message(Msg::PidRemove(pid.deref().clone()));
+                self.pid_manager.send( Incoming::Replace(pid, record));
             },
 
             Msg::RegisterFDO(mut record) => self.pit_service.register_pidinfo(&mut record),
             Msg::UpdateFDO(mut record) => self.pit_service.update_pidinfo(&mut record),
-            
-            Msg::DataAdd(data, pid) => {
-                log::debug!("Adding data {:?} to record {:?}", data, pid);
-                let id = self.known_data.borrow_mut().add(data.clone());
-                if let Some(record) = self.known_pids.borrow_mut().find_mut(&pid) {
-                    record.data = Some(id);
-                }
-            }
-            Msg::DataModify(id, data) => {
-                self.known_data.borrow_mut().insert(id, data);
-            }
-            Msg::DataModifyBatch(datasets) => {
-                let messages: Vec<Msg> = datasets.into_iter().map(|(id, data)| Msg::DataModify(id, data)).collect();
-                self.link.send_message_batch(messages);
-            }
-            Msg::DataRemove(id) => {
-                self.known_data.borrow_mut().remove(&id);
-            }
-            Msg::DataRegister(id) => {
-                let data = self.known_data.borrow_mut().get(&id).cloned();
-                match data {
-                    Some(Data::AnnotatedImage(_image)) => log::error!("Unimplemented: Tried to register image data."),
-                    Some(Data::Collection(collection)) => self.collection_service.send(collection_service::Request::Register(vec![(id, collection)])),
-                    None => log::error!("ERROR: Tried to register data that is not in app state (yet).")
-                }
-            }
-            Msg::DataUpdate(id) => {
-                let data = self.known_data.borrow_mut().get(&id).cloned();
-                match data {
-                    Some(Data::AnnotatedImage(_image)) => log::error!("Unimplemented: Tried to register image data."),
-                    Some(Data::Collection(collection)) => self.collection_service.send(collection_service::Request::Update(vec![(id, collection)])),
-                    None => log::error!("ERROR: Tried to register data that is not in app state (yet).")
-                }
-            }
         }
         true
     }
 
-    fn change(&mut self, _props: Self::Properties) -> ShouldRender {
+    fn change(&mut self, _: Self::Properties) -> ShouldRender {
         // Should only return "true" if new properties are different to
         // previously received properties.
-        false
+        true
     }
 
     fn view(&self) -> Html {
         let known_pids = self.known_pids.clone();
-        let known_data = self.known_data.clone();
         let model_link = self.link.clone();
         let router_function = move |switch: AppRoute| match switch {
-            AppRoute::Details { ref path } => known_pids.borrow().find(path).map_or_else(
-                || Self::view_record_not_found_page(path),
-                |item| {
-                    let data = known_data.borrow().find_data_for_record(&item);
-                    html! {<DetailsPage model_link=model_link.clone() record=item.clone() current_data=data known_data=known_data.clone() />}
-                },
-            ),
+            AppRoute::Details { ref path } => {
+                let pid = Pid(path.to_string());
+                known_pids.get(&pid).map_or_else(
+                    || Self::view_record_not_found_page(path),
+                    |item| {
+                        html! {<DetailsPage model_link=model_link.clone() record=item.clone() />}
+                    }
+                )
+            },
             AppRoute::Search => html! {<SearchComponent/>},
             AppRoute::Index => Self::view_welcome_page(),
         };
@@ -183,7 +146,11 @@ impl Component for Model {
                         <RouterButton<AppRoute> route=AppRoute::Search>{ "Search" }</RouterButton<AppRoute>>
                     </div>
                     <div id="workspace" class="scroll-vertical">
-                        { for self.known_pids.borrow().iter().map(|(_pid, pidinfo)| pidinfo.view_as_list_item()) }
+                        {
+                            for self.known_pids.iter().map(|(_pid, pidinfo)| {
+                                html!{ <PidInfoView model_link=self.link.clone() record=pidinfo /> }
+                            })
+                        }
                     </div>
                 </div>
                 <Router<AppRoute, ()> render = Router::render(router_function)

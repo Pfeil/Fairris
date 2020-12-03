@@ -9,13 +9,11 @@ use anyhow::Error;
 use serde_json::Value;
 use yew::{
     format::Json, services::fetch, services::fetch::FetchTask, services::FetchService, worker::*,
-    Callback, ComponentLink,
+    Callback,
 };
 
-use crate::{known_data::DataID, Model};
+use crate::app_state::data::DataID;
 use collection::*;
-use collection_capabilities::*;
-use collection_properties::*;
 
 pub struct CollectionService {
     link: AgentLink<CollectionService>,
@@ -52,12 +50,14 @@ impl Agent for CollectionService {
         match msg {
             Response::Registered(collections) => {
                 for sub in self.subscribers.iter() {
-                    self.link.respond(*sub, Response::Registered(collections.clone()));
+                    self.link
+                        .respond(*sub, Response::Registered(collections.clone()));
                 }
             }
             Response::Updated(collections) => {
                 for sub in self.subscribers.iter() {
-                    self.link.respond(*sub, Response::Updated(collections.clone()));
+                    self.link
+                        .respond(*sub, Response::Updated(collections.clone()));
                 }
             }
             Response::Error(msg) => log::error!("Collection Service Error: {}", msg),
@@ -105,7 +105,11 @@ impl CollectionService {
                             .as_str(),
                     );
                     if let Ok(collections) = thing {
-                        let packed = ids.clone().into_iter().zip(collections.into_iter()).collect();
+                        let packed = ids
+                            .clone()
+                            .into_iter()
+                            .zip(collections.into_iter())
+                            .collect();
                         Response::Registered(packed)
                     } else {
                         Response::Error(format!(

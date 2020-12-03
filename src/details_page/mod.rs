@@ -1,44 +1,39 @@
-mod helpers;
-mod type_selector;
-mod edit_button;
-mod profile_selector;
-mod publish_button;
-mod locations_list;
-mod version_input;
-mod policy_input;
-mod etag_input;
+mod data_widget;
 mod date_created_input;
 mod date_modified_input;
-mod data_widget;
+mod edit_button;
+mod etag_input;
+mod helpers;
+mod locations_list;
+mod policy_input;
+mod profile_selector;
+mod publish_button;
+mod type_selector;
+mod version_input;
 
-use std::{rc::Rc, cell::RefCell};
-
-use type_selector::*;
-use edit_button::*;
-use profile_selector::*;
-use publish_button::*;
-use locations_list::*;
-use version_input::*;
-use policy_input::*;
-use etag_input::*;
+use data_widget::*;
 use date_created_input::*;
 use date_modified_input::*;
-use data_widget::*;
+use edit_button::*;
+use etag_input::*;
+use locations_list::*;
+use policy_input::*;
+use profile_selector::*;
+use publish_button::*;
+use type_selector::*;
+use version_input::*;
 
-use yew::prelude::*;
+use yew::{agent::Dispatcher, prelude::*};
 
-use crate::{
-    Model,
-    data_type_registry::{
-        DateCreated, DateModified, DigitalObjectType, Etag, Locations, Pid, Policy, Profile, Version
-    },
-    pidinfo::{PidInfo, State},
-    known_data::*,
-};
+use crate::{Model, app_state::pid_manager::{Incoming, PidManager}, data_type_registry::{
+        DateCreated, DateModified, DigitalObjectType, Etag, Locations, Pid, Policy, Profile,
+        Version,
+    }, pidinfo::{PidInfo, State}};
 
 pub struct DetailsPage {
     link: ComponentLink<Self>,
     props: Props,
+    pid_manager: Dispatcher<PidManager>,
 
     edit_mode: bool,
 }
@@ -49,8 +44,6 @@ pub struct Props {
     pub model_link: ComponentLink<Model>,
     // the record this details page represents
     pub record: PidInfo,
-    pub current_data: Option<(DataID, Data)>,
-    pub known_data: Rc<RefCell<KnownData>>,
 }
 
 #[derive(Debug)]
@@ -66,9 +59,6 @@ pub enum Msg {
     VersionChanged(Version),
     PolicyChanged(Policy),
     EtagChanged(Etag),
-    DataChanged(DataID, Data),
-
-    DataNew(Data),
 }
 
 impl Component for DetailsPage {
@@ -79,6 +69,7 @@ impl Component for DetailsPage {
         let mut new_self = Self {
             link,
             props,
+            pid_manager: PidManager::dispatcher(),
             edit_mode: false,
         };
         new_self.reset_page_state();
@@ -92,20 +83,24 @@ impl Component for DetailsPage {
                 self.edit_mode = !self.edit_mode;
                 self.props.record.update_state();
                 if !self.edit_mode {
-                    self.props
-                        .model_link
-                        .send_message(super::Msg::PidAdd(self.props.record.clone()))
+                    //self.props
+                    //    .model_link
+                    //    .send_message(super::Msg::PidAdd(self.props.record.clone()))
+                    self.pid_manager.send(Incoming::AddPidInfo(self.props.record.clone()));
                 }
             }
             Msg::Publish => {
                 match self.props.record.state() {
                     State::Clean => log::error!("Status is clean. This should not happen."),
-                    State::Modified => {
-                        self.props.model_link.send_message(super::Msg::UpdateFDO(self.props.record.clone()))
-                    }
+                    State::Modified => self
+                        .props
+                        .model_link
+                        .send_message(super::Msg::UpdateFDO(self.props.record.clone())),
                     State::Unregistered => {
                         // TODO consider a waiting animation or something in here.
-                        self.props.model_link.send_message(super::Msg::RegisterFDO(self.props.record.clone()));
+                        self.props
+                            .model_link
+                            .send_message(super::Msg::RegisterFDO(self.props.record.clone()));
                     }
                 }
             }
@@ -122,28 +117,12 @@ impl Component for DetailsPage {
             Msg::EtagChanged(etag) => self.props.record.etag = etag,
             Msg::DateCreatedChanged(date) => self.props.record.date_created = date,
             Msg::DateModifiedChanged(date) => self.props.record.date_modified = date,
-            Msg::DataChanged(id, data) => {
-                self.props.record.data = Some(id);
-                self.props.model_link.send_message(super::Msg::DataModify(id, data));
-                self.props.model_link.send_message(super::Msg::PidAdd(self.props.record.clone()));
-            }
-            Msg::DataNew(data) => {
-                log::debug!("Got DataNew");
-                self.props.model_link.send_message(
-                    crate::Msg::DataAdd(
-                        data,
-                        Pid(self.props.record.pid().clone())
-                    )
-                )
-            }
         }
         true
     }
 
     fn change(&mut self, props: Self::Properties) -> yew::ShouldRender {
-        let changed = self.props.record != props.record
-            || self.props.current_data != props.current_data
-            || *self.props.known_data.borrow() != *props.known_data.borrow();
+        let changed = self.props.record != props.record;
         if changed {
             self.reset_page_state();
             log::debug!("Detail Page Change: {:?}", &props);
@@ -177,8 +156,8 @@ impl Component for DetailsPage {
                     </div>
                 </div>
 
-                <DataWidget model=self.props.model_link.clone() detail_page=self.link.clone() data=self.props.current_data.clone() known_data=self.props.known_data.clone()/>
-                
+                <DataWidget model=self.props.model_link.clone() detail_page=self.link.clone() />
+
                 <details open=true>
                     <summary>{ "Record Metadata (raw)" }</summary>
                     <div class="two-column-lefty">{ data.view_record() }</div>
@@ -190,7 +169,7 @@ impl Component for DetailsPage {
                         <EditButton form_link=self.link.clone() edit_mode=self.edit_mode />
                         <PublishButton form_link=self.link.clone() edit_mode=self.edit_mode state=self.props.record.state() />
                     </div>
-                    
+
                     <div class="two-column-lefty">
                         <ProfileSelector form_link=self.link.clone() active=self.edit_mode maybe_profile=profile />
                         <DigitalObjectTypeSelector form_link=self.link.clone() active=self.edit_mode maybe_type=digital_object_type/>

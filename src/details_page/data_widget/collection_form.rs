@@ -1,18 +1,23 @@
-use yew::prelude::*;
+use yew::{agent::Dispatcher, prelude::*};
 
-use crate::{collection_service::collection::Collection, details_page::DetailsPage, known_data::{Data, DataID}};
+use crate::{
+    app_state::{data::DataID, data_manager::DataManager, data_manager},
+    collection_service::{collection::Collection, CollectionService},
+};
 
 pub struct CollectionForm {
     link: ComponentLink<Self>,
     props: Props,
+
+    collection_service: Dispatcher<CollectionService>,
+    data_manager: Dispatcher<DataManager>,
+
 }
 
 #[derive(Properties, Clone)]
 pub struct Props {
     pub id: DataID,
     pub collection: Collection,
-    pub detail_page: ComponentLink<DetailsPage>,
-    pub model: ComponentLink<crate::Model>,
 }
 
 #[derive(Debug)]
@@ -32,6 +37,8 @@ impl Component for CollectionForm {
         Self {
             link,
             props,
+            collection_service: CollectionService::dispatcher(),
+            data_manager: DataManager::dispatcher(),
         }
     }
 
@@ -48,10 +55,21 @@ impl Component for CollectionForm {
             Msg::PublishClicked => {
                 let id = self.props.id.clone();
                 if self.props.collection.get_id().is_empty() {
-                    self.props.model.send_message(crate::Msg::DataRegister(id))
+                    //self.props.model.send_message(crate::Msg::DataRegister(id))
+                    self.collection_service
+                        .send(crate::collection_service::Request::Register(vec![(
+                            id,
+                            self.props.collection.clone(),
+                        )]));
                 } else {
-                    self.props.model.send_message(crate::Msg::DataUpdate(id))
+                    //self.props.model.send_message(crate::Msg::DataUpdate(id))
+                    self.collection_service
+                        .send(crate::collection_service::Request::Update(vec![(
+                            id,
+                            self.props.collection.clone(),
+                        )]));
                 }
+                self.update_data();
             }
             Msg::Error(e) => log::error!("Error: {}", e),
         }
@@ -78,14 +96,22 @@ impl Component for CollectionForm {
             ChangeData::Value(description) => Msg::DescriptionChanged(description),
             other => Msg::Error(format!("Unexpected change: {:?}", other)),
         });
-        let properties: String = self.props.collection.properties.as_ref().map_or(
-            "No properties yet".to_owned(),
-            |properties| serde_json::to_string_pretty(&properties).unwrap()
-        );
-        let capabilities: String = self.props.collection.capabilities.as_ref().map_or(
-            "No capabilities yet".to_owned(),
-            |capabilities| serde_json::to_string_pretty(&capabilities).unwrap()
-        );
+        let properties: String = self
+            .props
+            .collection
+            .properties
+            .as_ref()
+            .map_or("No properties yet".to_owned(), |properties| {
+                serde_json::to_string_pretty(&properties).unwrap()
+            });
+        let capabilities: String = self
+            .props
+            .collection
+            .capabilities
+            .as_ref()
+            .map_or("No capabilities yet".to_owned(), |capabilities| {
+                serde_json::to_string_pretty(&capabilities).unwrap()
+            });
         let (button_text, button_classes) = if self.props.collection.get_id().is_empty() {
             ("Register collection", "publish-button")
         } else {
@@ -113,12 +139,15 @@ impl Component for CollectionForm {
 }
 
 const DESCRIPTION_FIELD: &str = "description_field";
-const ANNOS_FIELD_NAME: &str = "annos_field";
 
 impl CollectionForm {
-    fn update_data(&self) {
+    fn update_data(&mut self) {
+        use crate::app_state::data::Data;
         let data = Data::Collection(self.props.collection.clone());
         let id = self.props.id;
-        self.props.detail_page.send_message(crate::details_page::Msg::DataChanged(id, data))
+        //self.props
+        //    .detail_page
+        //    .send_message(crate::details_page::Msg::DataChanged(id, data))
+        self.data_manager.send(data_manager::Incoming::UpdateData(id, data));
     }
 }
