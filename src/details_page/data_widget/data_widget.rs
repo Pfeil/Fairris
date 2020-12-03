@@ -5,7 +5,7 @@ use yew::prelude::*;
 use super::annotated_image_form::*;
 use super::collection_form::*;
 use super::create_data_form::*;
-use crate::{DetailsPage, app_state::{data::{Data, DataID}, data_manager::DataManager}};
+use crate::{DetailsPage, app_state::{data::{Data, DataID}, data_manager::DataManager}, details_page};
 
 pub struct DataWidget {
     link: ComponentLink<Self>,
@@ -19,7 +19,6 @@ pub struct DataWidget {
 
 #[derive(Properties, Clone)]
 pub struct Props {
-    pub model: ComponentLink<crate::Model>,
     pub detail_page: ComponentLink<DetailsPage>,
 }
 
@@ -60,10 +59,14 @@ impl Component for DataWidget {
                 }
             }
             Msg::SetData(d) => {
+                let maybe_id = d.clone().map(|(id, _)| id);
+                // change own state
                 self.data = d;
                 self.update_dropdown();
-
+                // change global data state
                 self.data_manager.send(Incoming::GetAllData);
+                // notify the parent about this change, so it may notify the PID state.
+                self.props.detail_page.send_message(details_page::Msg::DataChanged(maybe_id));
             },
             Msg::Error(e) => log::error!("Message not handled: {}", e),
             Msg::SetDataList(v) => self.data_list = v,

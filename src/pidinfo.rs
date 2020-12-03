@@ -158,7 +158,7 @@ impl Default for PidInfo {
 
 impl PartialEq for PidInfo {
     fn eq(&self, other: &Self) -> bool {
-        self.record == other.record && self.state == other.state
+        self.record == other.record && self.state == other.state && self.data == other.data
     }
 }
 

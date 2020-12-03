@@ -25,7 +25,7 @@ use version_input::*;
 
 use yew::{agent::Dispatcher, prelude::*};
 
-use crate::{Model, app_state::pid_manager::{Incoming, PidManager}, data_type_registry::{
+use crate::{Model, app_state::{data::DataID, data_manager, data_manager::DataManager, pid_manager, pid_manager::PidManager}, data_type_registry::{
         DateCreated, DateModified, DigitalObjectType, Etag, Locations, Pid, Policy, Profile,
         Version,
     }, pidinfo::{PidInfo, State}};
@@ -33,7 +33,9 @@ use crate::{Model, app_state::pid_manager::{Incoming, PidManager}, data_type_reg
 pub struct DetailsPage {
     link: ComponentLink<Self>,
     props: Props,
+
     pid_manager: Dispatcher<PidManager>,
+    data_manager: Dispatcher<DataManager>,
 
     edit_mode: bool,
 }
@@ -59,6 +61,8 @@ pub enum Msg {
     VersionChanged(Version),
     PolicyChanged(Policy),
     EtagChanged(Etag),
+
+    DataChanged(Option<DataID>),
 }
 
 impl Component for DetailsPage {
@@ -70,23 +74,26 @@ impl Component for DetailsPage {
             link,
             props,
             pid_manager: PidManager::dispatcher(),
+            data_manager: DataManager::dispatcher(),
             edit_mode: false,
         };
-        new_self.reset_page_state();
+        new_self.sync_page_to_record_state();
         new_self
     }
 
     fn update(&mut self, msg: Self::Message) -> yew::ShouldRender {
-        log::debug!("Form received message: {:?}", msg);
+        log::debug!("Details page received message: {:?}", msg);
         match msg {
             Msg::ToggleEditMode => {
+                use pid_manager::Incoming;
                 self.edit_mode = !self.edit_mode;
                 self.props.record.update_state();
                 if !self.edit_mode {
                     //self.props
                     //    .model_link
                     //    .send_message(super::Msg::PidAdd(self.props.record.clone()))
-                    self.pid_manager.send(Incoming::AddPidInfo(self.props.record.clone()));
+                    self.pid_manager
+                        .send(Incoming::AddPidInfo(self.props.record.clone()));
                 }
             }
             Msg::Publish => {
@@ -117,6 +124,14 @@ impl Component for DetailsPage {
             Msg::EtagChanged(etag) => self.props.record.etag = etag,
             Msg::DateCreatedChanged(date) => self.props.record.date_created = date,
             Msg::DateModifiedChanged(date) => self.props.record.date_modified = date,
+            Msg::DataChanged(id) => {
+                // update own state
+                self.props.record.data = id;
+                // update global state
+                let record = self.props.record.clone();
+                use pid_manager::Incoming;
+                self.pid_manager.send(Incoming::AddPidInfo(record));
+            }
         }
         true
     }
@@ -124,9 +139,9 @@ impl Component for DetailsPage {
     fn change(&mut self, props: Self::Properties) -> yew::ShouldRender {
         let changed = self.props.record != props.record;
         if changed {
-            self.reset_page_state();
             log::debug!("Detail Page Change: {:?}", &props);
             self.props = props;
+            self.sync_page_to_record_state();
         }
         changed
     }
@@ -156,7 +171,7 @@ impl Component for DetailsPage {
                     </div>
                 </div>
 
-                <DataWidget model=self.props.model_link.clone() detail_page=self.link.clone() />
+                <DataWidget detail_page=self.link.clone() />
 
                 <details open=true>
                     <summary>{ "Record Metadata (raw)" }</summary>
@@ -188,7 +203,10 @@ impl Component for DetailsPage {
 }
 
 impl DetailsPage {
-    fn reset_page_state(&mut self) {
+    fn sync_page_to_record_state(&mut self) {
+        use data_manager::Incoming;
         self.edit_mode = false;
+        let id = self.props.record.data;
+        self.data_manager.send(Incoming::SelectDataId(id));
     }
 }

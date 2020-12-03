@@ -16,6 +16,7 @@ pub struct DataManager {
     selected: Option<DataID>,
 }
 
+#[derive(Debug, Clone)]
 pub enum Incoming {
     AddNewData(Data),
     UpdateData(DataID, Data),
@@ -46,9 +47,10 @@ impl Agent for DataManager {
         }
     }
 
-    fn update(&mut self, msg: Self::Message) {}
+    fn update(&mut self, _msg: Self::Message) {}
 
     fn handle_input(&mut self, msg: Self::Input, id: yew::worker::HandlerId) {
+        log::debug!("DataManager handles message: {:?}", msg);
         let (has_data_changed, has_selection_changed): (bool, bool) = match msg {
             Incoming::AddNewData(data) => {
                 self.add_new(data);
@@ -64,7 +66,7 @@ impl Agent for DataManager {
             }
             Incoming::AddAndSelectData(maybe_data) => {
                 if let Some(data) = maybe_data {
-                    let id= self.add_new(data);
+                    let id = self.add_new(data);
                     self.select(id);
                     (true, true)
                 } else {
@@ -75,25 +77,28 @@ impl Agent for DataManager {
             }
             Incoming::SelectDataId(maybe_id) => {
                 if let Some(id) = maybe_id {
-                    let changed = self.selected == Some(id);
+                    let changed = self.selected != Some(id);
                     self.select(id);
                     (false, changed)
                 } else {
-                    let changed = self.selected == None;
+                    let changed = self.selected != None;
                     self.unselect();
                     (false, changed)
                 }
             }
         };
+        log::debug!("Data/selection has changed: {}/{}", has_data_changed, has_selection_changed);
         if has_data_changed {
             self.notify_all(Outgoing::AllData(self.known_data.clone()));
         }
         if has_selection_changed {
             let selected = self.selected.map(|id| {
-                let data = self.get(&id).expect("Selected data must be in the hashmap.");
+                let data = self
+                    .get(&id)
+                    .expect("Selected data must be in the hashmap.");
                 (id, data.clone())
             });
-            self.notify_all( Outgoing::SelectedData(selected));
+            self.notify_all(Outgoing::SelectedData(selected));
         }
     }
 
