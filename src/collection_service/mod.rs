@@ -7,25 +7,26 @@ use std::collections::HashSet;
 
 use anyhow::Error;
 use serde_json::Value;
-use yew::{
-    format::Json, services::fetch, services::fetch::FetchTask, services::FetchService, worker::*,
-    Callback,
-};
+use yew::{prelude::*, Callback, agent::Dispatcher, format::Json, services::FetchService, services::fetch, services::fetch::FetchTask, worker::*};
 
-use crate::app_state::data::DataID;
+use crate::app_state::{data::{Data, DataID}, data_manager::DataManager};
 use collection::*;
 
 pub struct CollectionService {
     link: AgentLink<CollectionService>,
     subscribers: HashSet<HandlerId>,
+
     task: Option<FetchTask>,
+    data_manager: Dispatcher<DataManager>,
 }
 
+#[derive(Debug)]
 pub enum Request {
     Register(Vec<(DataID, Collection)>),
     Update(Vec<(DataID, Collection)>),
 }
 
+#[derive(Debug, Clone)]
 pub enum Response {
     Registered(Vec<(DataID, Collection)>),
     Updated(Vec<(DataID, Collection)>),
@@ -43,24 +44,28 @@ impl Agent for CollectionService {
             link,
             subscribers: HashSet::new(),
             task: None,
+            data_manager: DataManager::dispatcher(),
         }
     }
 
     fn update(&mut self, msg: Self::Message) {
-        match msg {
+        use crate::app_state::data_manager::Incoming as DataMsg;
+        match msg.clone() {
             Response::Registered(collections) => {
-                for sub in self.subscribers.iter() {
-                    self.link
-                        .respond(*sub, Response::Registered(collections.clone()));
+                for (id, coll) in collections {
+                    self.data_manager.send(DataMsg::UpdateData(id, Data::Collection(coll)));
                 }
             }
             Response::Updated(collections) => {
-                for sub in self.subscribers.iter() {
-                    self.link
-                        .respond(*sub, Response::Updated(collections.clone()));
+                for (id, coll) in collections {
+                    self.data_manager.send(DataMsg::UpdateData(id, Data::Collection(coll)));
                 }
             }
             Response::Error(msg) => log::error!("Collection Service Error: {}", msg),
+        }
+        for sub in self.subscribers.iter() {
+            self.link
+                .respond(*sub, msg.clone());
         }
     }
 
