@@ -4,7 +4,7 @@ use crate::service_communication::{PidRecord, pit_record::PidRecordEntry};
 use serde_json as json;
 use std::{ops::Deref, fmt::Display};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Etag(pub String);
 
 impl Default for Etag {

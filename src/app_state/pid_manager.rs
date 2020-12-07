@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::{Model, data_type_registry::Pid, pidinfo::PidInfo};
+use crate::{Model, data_type_registry::Pid, pidinfo::PidInfo, service_communication::PidRecord};
 
 use rand::prelude::*;
 use yew::{prelude::*, worker::{Agent, AgentLink, Context, HandlerId}};
@@ -18,8 +18,8 @@ pub enum Incoming {
     GetAllPidInformation,
     AddUnregisteredItem,
     AddPidInfo(PidInfo),
+    UpdateRecord(Pid, PidRecord),  // remove object with Pid and register PidInfo (contains it's own pid).
     RemovePidInfo(Pid),
-    Replace(Pid, PidInfo),  // remove object with Pid and register PidInfo (contains it's own pid).
 }
 
 #[derive(Debug, Clone)]
@@ -57,13 +57,14 @@ impl Agent for PidManager {
                 (true, false)
             }
             Incoming::RemovePidInfo(pid) => {
-                self.remove(pid);
+                self.remove(&pid);
                 // TODO it would be possible to select something else (or nothing) in case the deleted is selected.
                 (true, false)
             }
-            Incoming::Replace(pid, info) => {
-                self.replace(pid, info);
-                (true, false)
+            Incoming::UpdateRecord(pid, record) => {
+                self.update_record(&pid, record);
+                let selection_was_changed = self.selected == Some(pid);
+                (true, selection_was_changed)
             }
         };
         if pids_changed {
@@ -86,13 +87,16 @@ impl PidManager {
         self.known_pids.insert(pid, pidinfo);
     }
 
-    fn remove(&mut self, pid: Pid) {
+    fn remove(&mut self, pid: &Pid) {
         self.known_pids.remove(&pid);
     }
 
-    fn replace(&mut self, pid: Pid, info: PidInfo) {
+    fn update_record(&mut self, pid: &Pid, record: PidRecord) {
+        let data_id = self.known_pids.get(&pid).map(|old_pidinfo| old_pidinfo.data).flatten();
         self.remove(pid);
-        self.add(info);
+        let mut new_object = PidInfo::from_registered(record);
+        new_object.data = data_id;
+        self.add(new_object);
     }
 
     pub fn find(&self, pid: &Pid) -> Option<&PidInfo> {

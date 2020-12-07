@@ -6,7 +6,7 @@ use serde_json as json;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PidInfo {
     // The published record (if published)
     record: PidRecord,
@@ -34,19 +34,19 @@ pub enum State {
 }
 
 impl PidInfo {
-    pub fn from_registered(record: PidRecord, model_link: ComponentLink<Model>) -> Self {
-        Self::from(record, State::Clean, model_link)
+    pub fn from_registered(record: PidRecord) -> Self {
+        Self::from(record, State::Clean)
     }
 
-    pub fn from_unregistered(record: PidRecord, model_link: ComponentLink<Model>) -> Self {
-        Self::from(record, State::Unregistered, model_link)
+    pub fn from_unregistered(record: PidRecord) -> Self {
+        Self::from(record, State::Unregistered)
     }
 
-    pub fn from_modified(record: PidRecord, model_link: ComponentLink<Model>) -> Self {
-        Self::from(record, State::Modified, model_link)
+    pub fn from_modified(record: PidRecord) -> Self {
+        Self::from(record, State::Modified)
     }
 
-    fn from(record: PidRecord, state: State, model_link: ComponentLink<Model>) -> Self {
+    fn from(record: PidRecord, state: State) -> Self {
         let profile: MaybeProfile = Profile::try_from(&record);
         let digital_object_type = DigitalObjectType::try_from(&record);
         let locations = Locations::from(&record);
@@ -155,11 +155,3 @@ impl Default for PidInfo {
         }
     }
 }
-
-impl PartialEq for PidInfo {
-    fn eq(&self, other: &Self) -> bool {
-        self.record == other.record && self.state == other.state && self.data == other.data
-    }
-}
-
-impl Eq for PidInfo {}

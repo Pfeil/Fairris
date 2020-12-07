@@ -26,6 +26,7 @@ use search_component::SearchComponent;
 use pit_service::PitService;
 use pidinfo_viewer::PidInfoView;
 
+use service_communication::PidRecord;
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 use yew_router::{prelude::*, router::Router, Switch};
@@ -55,7 +56,7 @@ pub struct Model {
 pub enum Msg {
     AddDefaultItem,
     PidAdd(PidInfo),  // overwrites if object with this pid exists
-    PidReplace(Pid, PidInfo),  // object with pid will be removed, new one will be added
+    UpdateRecord(Pid, PidRecord),  // object with pid will be removed, new one will be added
     PidRemove(Pid),  // object will be removed
 
     RegisterFDO(PidInfo),
@@ -104,10 +105,8 @@ impl Component for Model {
                 //self.known_pids.borrow_mut().remove(&pid);
                 self.pid_manager.send( Incoming::RemovePidInfo(pid) );
             }
-            Msg::PidReplace(pid, record) => {
-                //self.link.send_message(Msg::PidAdd(record));
-                //self.link.send_message(Msg::PidRemove(pid.deref().clone()));
-                self.pid_manager.send( Incoming::Replace(pid, record));
+            Msg::UpdateRecord(pid, record) => {
+                self.pid_manager.send( Incoming::UpdateRecord(pid, record));
             },
 
             Msg::RegisterFDO(mut record) => self.pit_service.register_pidinfo(&mut record),

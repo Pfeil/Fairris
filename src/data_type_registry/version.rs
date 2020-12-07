@@ -5,7 +5,7 @@ use crate::service_communication::{pit_record::PidRecordEntry, PidRecord};
 use super::{HasProfileKey, Pid};
 use std::{ops::Deref, fmt::Display};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Version(pub String);
 
 /// Associates profiles with their Display name (for the user interface).

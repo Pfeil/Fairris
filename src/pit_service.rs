@@ -41,7 +41,7 @@ impl PitService {
                     )
                     .and_then(|record: PidRecord| {
                         Ok(super::Msg::PidAdd(
-                            PidInfo::from_registered(record, model_link.clone()),
+                            PidInfo::from_registered(record),
                         ))
                     })
                     .unwrap_or_else(|e| super::Msg::Error(format!("Error parsing record: {:?}", e)))
@@ -69,9 +69,9 @@ impl PitService {
                             .as_str(),
                     )
                     .and_then(|record: PidRecord| {
-                        Ok(super::Msg::PidReplace(
+                        Ok(super::Msg::UpdateRecord(
                             old_pid.clone(), // might be registered or not
-                            PidInfo::from_registered(record, model_link.clone()),
+                            record,
                         ))
                     })
                     .unwrap_or_else(|e| super::Msg::Error(format!("Error parsing record: {:?}", e)))

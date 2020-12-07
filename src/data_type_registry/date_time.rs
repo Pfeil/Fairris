@@ -7,7 +7,7 @@ use crate::service_communication::{pit_record::PidRecordEntry, PidRecord};
 
 use super::{HasProfileKey, Pid};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct DateCreated(pub DateTimeHandle);
 
 impl HasProfileKey for DateCreated {
@@ -27,7 +27,7 @@ impl HasProfileKey for DateCreated {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct DateModified(pub DateTimeHandle);
 
 impl HasProfileKey for DateModified {
@@ -47,7 +47,7 @@ impl HasProfileKey for DateModified {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DateTimeHandle(DateTime<Utc>);
 
 impl Default for DateTimeHandle {

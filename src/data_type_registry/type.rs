@@ -6,7 +6,7 @@ use super::{HasProfileKey, Pid};
 use crate::service_communication::{pit_record::PidRecordEntry, PidRecord};
 use strum::IntoEnumIterator;
 
-#[derive(Clone, Copy, Debug, EnumIter, PartialEq)]
+#[derive(Clone, Copy, Debug, EnumIter, PartialEq, Eq)]
 pub enum DigitalObjectType {
     // a collection (api) item with all related objects to replicate the results.
     Publication,
