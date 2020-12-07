@@ -21,6 +21,7 @@ pub enum Incoming {
     AddNewData(Data),
     UpdateData(DataID, Data),
     GetAllData,
+    GetSelectedData,
 
     SelectDataId(Option<DataID>),
     AddAndSelectData(Option<Data>),
@@ -65,6 +66,7 @@ impl Agent for DataManager {
                 self.link.respond(id, Outgoing::AllData(self.known_data.clone()));
                 (false, false)
             }
+            Incoming::GetSelectedData => (false, true),
             Incoming::AddAndSelectData(maybe_data) => {
                 if let Some(data) = maybe_data {
                     let id = self.add_new(data);
