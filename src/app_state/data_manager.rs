@@ -58,7 +58,8 @@ impl Agent for DataManager {
             }
             Incoming::UpdateData(id, data) => {
                 self.update(id, data);
-                (true, false)
+                let selected_was_updated = Some(id) == self.selected;
+                (true, selected_was_updated)
             }
             Incoming::GetAllData => {
                 self.link.respond(id, Outgoing::AllData(self.known_data.clone()));
