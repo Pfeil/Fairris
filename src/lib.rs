@@ -18,7 +18,7 @@ mod collection_service;
 
 use std::collections::HashMap;
 
-use app_state::pid_manager::PidManager;
+use app_state::{data_manager::DataManager, pid_manager::PidManager};
 use data_type_registry::Pid;
 use details_page::DetailsPage;
 use pidinfo::PidInfo;
@@ -49,6 +49,9 @@ pub struct Model {
     pit_service: PitService,
 
     pid_manager: Box<dyn Bridge<PidManager>>,
+    // keeping a bridge to the data state here keeps it alive.
+    _data_manager: Box<dyn Bridge<DataManager>>,
+
     known_pids: HashMap<Pid, PidInfo>,
 }
 
@@ -64,6 +67,7 @@ pub enum Msg {
 
     UpdatePidInfoList(HashMap<Pid, PidInfo>),
     Error(String),
+    Noop,
 }
 
 impl Component for Model {
@@ -81,7 +85,8 @@ impl Component for Model {
             }
         }));
         pid_manager.send(Incoming::GetAllPidInformation);
-        Self { link, pit_service, pid_manager, known_pids: Default::default() }
+        let _data_manager = DataManager::bridge(link.callback(|_msg| Msg::Noop));
+        Self { link, pit_service, pid_manager, _data_manager, known_pids: Default::default() }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
@@ -89,30 +94,42 @@ impl Component for Model {
 
         log::debug!("Model received update {:?}", msg);
         match msg {
-            Msg::Error(issue) => log::error!("Something went wrong: {}", issue),
-            Msg::UpdatePidInfoList(list) => self.known_pids = list,
+            Msg::Error(issue) => {
+                log::error!("Something went wrong: {}", issue);
+                false
+            },
+            Msg::UpdatePidInfoList(list) => {
+                self.known_pids = list;
+                true
+            },
 
             Msg::AddDefaultItem => {
-                //self.known_pids.borrow_mut().add_unregistered(self.link.clone());
                 self.pid_manager.send(Incoming::AddUnregisteredItem);
+                true
             }
             Msg::PidAdd(item) => {
-                //self.known_pids.borrow_mut().insert(item.pid().clone(), item);
-                //let pid = item.pid().clone();
                 self.pid_manager.send( Incoming::AddPidInfo(item) );
+                true
             },
             Msg::PidRemove(pid) => {
-                //self.known_pids.borrow_mut().remove(&pid);
                 self.pid_manager.send( Incoming::RemovePidInfo(pid) );
+                true
             }
             Msg::UpdateRecord(pid, record) => {
                 self.pid_manager.send( Incoming::UpdateRecord(pid, record));
+                true
             },
 
-            Msg::RegisterFDO(mut record) => self.pit_service.register_pidinfo(&mut record),
-            Msg::UpdateFDO(mut record) => self.pit_service.update_pidinfo(&mut record),
+            Msg::RegisterFDO(mut record) => {
+                self.pit_service.register_pidinfo(&mut record);
+                true
+            },
+            Msg::UpdateFDO(mut record) => {
+                self.pit_service.update_pidinfo(&mut record);
+                true
+            },
+            Msg::Noop => false,
         }
-        true
     }
 
     fn change(&mut self, _: Self::Properties) -> ShouldRender {
