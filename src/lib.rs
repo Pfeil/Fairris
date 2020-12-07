@@ -23,10 +23,8 @@ use data_type_registry::Pid;
 use details_page::DetailsPage;
 use pidinfo::PidInfo;
 use search_component::SearchComponent;
-use pit_service::PitService;
 use pidinfo_viewer::PidInfoView;
 
-use service_communication::PidRecord;
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 use yew_router::{prelude::*, router::Router, Switch};
@@ -46,7 +44,6 @@ pub enum AppRoute {
 
 pub struct Model {
     link: ComponentLink<Self>,
-    pit_service: PitService,
 
     pid_manager: Box<dyn Bridge<PidManager>>,
     // keeping a bridge to the data state here keeps it alive.
@@ -59,11 +56,7 @@ pub struct Model {
 pub enum Msg {
     AddDefaultItem,
     PidAdd(PidInfo),  // overwrites if object with this pid exists
-    UpdateRecord(Pid, PidRecord),  // object with pid will be removed, new one will be added
     PidRemove(Pid),  // object will be removed
-
-    RegisterFDO(PidInfo),
-    UpdateFDO(PidInfo),
 
     UpdatePidInfoList(HashMap<Pid, PidInfo>),
     Error(String),
@@ -76,17 +69,14 @@ impl Component for Model {
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
         use crate::app_state::pid_manager::Incoming;
-
-        let pit_service = PitService::new(link.clone());
         let mut pid_manager = PidManager::bridge(link.callback(|msg| {
-            log::debug!("Lib received list with PidInfos: {:?}", msg);
             match msg {
                 app_state::pid_manager::Outgoing::AllPidInformation(infos) => Msg::UpdatePidInfoList(infos),
             }
         }));
         pid_manager.send(Incoming::GetAllPidInformation);
         let _data_manager = DataManager::bridge(link.callback(|_msg| Msg::Noop));
-        Self { link, pit_service, pid_manager, _data_manager, known_pids: Default::default() }
+        Self { link, pid_manager, _data_manager, known_pids: Default::default() }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
@@ -115,19 +105,6 @@ impl Component for Model {
                 self.pid_manager.send( Incoming::RemovePidInfo(pid) );
                 true
             }
-            Msg::UpdateRecord(pid, record) => {
-                self.pid_manager.send( Incoming::UpdateRecord(pid, record));
-                true
-            },
-
-            Msg::RegisterFDO(mut record) => {
-                self.pit_service.register_pidinfo(&mut record);
-                true
-            },
-            Msg::UpdateFDO(mut record) => {
-                self.pit_service.update_pidinfo(&mut record);
-                true
-            },
             Msg::Noop => false,
         }
     }
@@ -140,14 +117,13 @@ impl Component for Model {
 
     fn view(&self) -> Html {
         let known_pids = self.known_pids.clone();
-        let model_link = self.link.clone();
         let router_function = move |switch: AppRoute| match switch {
             AppRoute::Details { ref path } => {
                 let pid = Pid(path.to_string());
                 known_pids.get(&pid).map_or_else(
                     || Self::view_record_not_found_page(path),
                     |item| {
-                        html! {<DetailsPage model_link=model_link.clone() record=item.clone() />}
+                        html! {<DetailsPage record=item.clone() />}
                     }
                 )
             },

@@ -25,7 +25,7 @@ use version_input::*;
 
 use yew::{agent::Dispatcher, prelude::*};
 
-use crate::{Model, app_state::{data::DataID, data_manager, data_manager::DataManager, pid_manager, pid_manager::PidManager}, data_type_registry::{
+use crate::{pit_service::PitService, app_state::{data::DataID, data_manager, data_manager::DataManager, pid_manager, pid_manager::PidManager}, data_type_registry::{
         DateCreated, DateModified, DigitalObjectType, Etag, Locations, Pid, Policy, Profile,
         Version,
     }, pidinfo::{PidInfo, State}};
@@ -34,6 +34,7 @@ pub struct DetailsPage {
     link: ComponentLink<Self>,
     props: Props,
 
+    pit_service: Dispatcher<PitService>,
     pid_manager: Dispatcher<PidManager>,
     data_manager: Dispatcher<DataManager>,
 
@@ -42,8 +43,6 @@ pub struct DetailsPage {
 
 #[derive(Properties, Clone, Debug)]
 pub struct Props {
-    // A link to send messages to the application
-    pub model_link: ComponentLink<Model>,
     // the record this details page represents
     pub record: PidInfo,
 }
@@ -73,6 +72,7 @@ impl Component for DetailsPage {
         let mut new_self = Self {
             link,
             props,
+            pit_service: PitService::dispatcher(),
             pid_manager: PidManager::dispatcher(),
             data_manager: DataManager::dispatcher(),
             edit_mode: false,
@@ -89,26 +89,16 @@ impl Component for DetailsPage {
                 self.edit_mode = !self.edit_mode;
                 self.props.record.update_state();
                 if !self.edit_mode {
-                    //self.props
-                    //    .model_link
-                    //    .send_message(super::Msg::PidAdd(self.props.record.clone()))
                     self.pid_manager
                         .send(Incoming::AddPidInfo(self.props.record.clone()));
                 }
             }
             Msg::Publish => {
+                use crate::pit_service::Request as PitReq;
                 match self.props.record.state() {
                     State::Clean => log::error!("Status is clean. This should not happen."),
-                    State::Modified => self
-                        .props
-                        .model_link
-                        .send_message(super::Msg::UpdateFDO(self.props.record.clone())),
-                    State::Unregistered => {
-                        // TODO consider a waiting animation or something in here.
-                        self.props
-                            .model_link
-                            .send_message(super::Msg::RegisterFDO(self.props.record.clone()));
-                    }
+                    State::Modified => self.pit_service.send(PitReq::Update(self.props.record.clone())),
+                    State::Unregistered => self.pit_service.send(PitReq::Register(self.props.record.clone())),
                 }
             }
 

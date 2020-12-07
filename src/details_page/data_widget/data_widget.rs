@@ -42,6 +42,7 @@ impl Component for DataWidget {
             Outgoing::AllData(v) => Msg::SetDataList(v),
         }));
         data_manager.send(Incoming::GetAllData);
+        data_manager.send(Incoming::GetSelectedData);
         Self { link, props, data_manager, data: None, data_list: Default::default() }
     }
 
@@ -68,8 +69,8 @@ impl Component for DataWidget {
                 // notify the parent about this change, so it may notify the PID state.
                 self.props.detail_page.send_message(details_page::Msg::DataChanged(maybe_id));
             },
-            Msg::Error(e) => log::error!("Message not handled: {}", e),
             Msg::SetDataList(v) => self.data_list = v,
+            Msg::Error(e) => log::error!("Message not handled: {}", e),
         }
         true
     }
