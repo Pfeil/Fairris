@@ -55,7 +55,6 @@ pub struct Model {
 #[derive(Debug)]
 pub enum Msg {
     AddDefaultItem,
-    PidAdd(PidInfo),  // overwrites if object with this pid exists
     PidRemove(Pid),  // object will be removed
 
     UpdatePidInfoList(HashMap<Pid, PidInfo>),
@@ -97,10 +96,6 @@ impl Component for Model {
                 self.pid_manager.send(Incoming::AddUnregisteredItem);
                 true
             }
-            Msg::PidAdd(item) => {
-                self.pid_manager.send( Incoming::AddPidInfo(item) );
-                true
-            },
             Msg::PidRemove(pid) => {
                 self.pid_manager.send( Incoming::RemovePidInfo(pid) );
                 true

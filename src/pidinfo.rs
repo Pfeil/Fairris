@@ -1,15 +1,13 @@
 use std::convert::TryFrom;
 
-use super::{AppRoute, Model, Msg};
 use crate::{app_state::data::DataID, data_type_registry::*, service_communication::pit_record::PidRecord};
 use serde_json as json;
 use yew::prelude::*;
-use yew_router::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PidInfo {
     // The published record (if published)
-    record: PidRecord,
+    pub record: PidRecord,
     state: State,
     pub data: Option<DataID>,
 

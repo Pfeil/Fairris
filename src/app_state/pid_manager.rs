@@ -1,9 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::{Model, data_type_registry::Pid, pidinfo::PidInfo, service_communication::PidRecord};
+use crate::{data_type_registry::Pid, pidinfo::PidInfo, service_communication::PidRecord};
 
 use rand::prelude::*;
-use yew::{prelude::*, worker::{Agent, AgentLink, Context, HandlerId}};
+use yew::{worker::{Agent, AgentLink, Context, HandlerId}};
 
 pub struct PidManager {
     link: AgentLink<PidManager>,
@@ -17,8 +17,8 @@ pub struct PidManager {
 pub enum Incoming {
     GetAllPidInformation,
     AddUnregisteredItem,
-    AddPidInfo(PidInfo),
-    UpdateRecord(Pid, PidRecord),  // remove object with Pid and register PidInfo (contains it's own pid).
+    AddPidInfo(PidInfo),  // TODO rename: This one updates record AND local changes into the state
+    UpdateRecord(Pid, PidRecord),  // TODO rename: This one updates only the internal record. The equivalent for the local changed might be a good idea.
     RemovePidInfo(Pid),
 }
 
@@ -42,9 +42,9 @@ impl Agent for PidManager {
         }
     }
 
-    fn update(&mut self, msg: Self::Message) {}
+    fn update(&mut self, _msg: Self::Message) {}
 
-    fn handle_input(&mut self, msg: Self::Input, id: HandlerId) {
+    fn handle_input(&mut self, msg: Self::Input, _id: HandlerId) {
         log::debug!("PidManager message: {:?}", msg);
         let (pids_changed, selection_changed): (bool, bool) = match msg {
             Incoming::GetAllPidInformation => (true, false),
@@ -97,14 +97,6 @@ impl PidManager {
         let mut new_object = PidInfo::from_registered(record);
         new_object.data = data_id;
         self.add(new_object);
-    }
-
-    pub fn find(&self, pid: &Pid) -> Option<&PidInfo> {
-        self.known_pids.get(pid)
-    }
-
-    pub fn find_mut(&mut self, pid: &Pid) -> Option<&mut PidInfo> {
-        self.known_pids.get_mut(pid)
     }
 
     pub fn add_unregistered(&mut self) -> Pid {
