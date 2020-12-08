@@ -63,7 +63,7 @@ impl Agent for PitService {
         match msg.clone() {
             Response::Error(e) => log::error!("PIT SERVICE ERROR: {}", e),
             Response::Registered(pid, record) => self.pid_manager.send(PidMsg::UpdateRecord(pid, record)),
-            Response::Updated(info) => self.pid_manager.send(PidMsg::AddPidInfo(info)),
+            Response::Updated(info) => self.pid_manager.send(PidMsg::UpdateRecord(Pid(info.pid().clone()), info.record)),
         }
         for sub in self.subscribers.iter() {
             self.link.respond(*sub, msg.clone());
