@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct CollectionProperties {
     #[serde(skip_serializing)]
-    id: Option<String>,
+    id: Option<u64>,
     #[serde(skip_serializing)]
-    date_created: String,
+    date_created: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     ownership: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

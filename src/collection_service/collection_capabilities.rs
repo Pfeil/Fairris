@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct CollectionCapabilities {
     #[serde(skip_serializing)]
-    id: Option<String>,
+    id: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     is_ordered: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]

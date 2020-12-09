@@ -7,8 +7,8 @@ use super::{collection_capabilities::CollectionCapabilities, collection_properti
 #[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct Collection {
-    #[serde(skip_serializing)]
-    id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -18,8 +18,8 @@ pub struct Collection {
 }
 
 impl Collection {
-    pub fn get_id(&self) -> &str {
-        self.id.as_str()
+    pub fn get_id(&self) -> Option<&str> {
+        self.id.as_ref().map(|id| id.as_str())
     }
 }
 

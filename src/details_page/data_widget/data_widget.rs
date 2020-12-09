@@ -65,12 +65,12 @@ impl Component for DataWidget {
                 self.data = d;
                 self.update_dropdown();
                 // change global data state
-                self.data_manager.send(Incoming::GetAllData);
+                //self.data_manager.send(Incoming::GetAllData);
                 // notify the parent about this change, so it may notify the PID state.
                 self.props.detail_page.send_message(details_page::Msg::DataChanged(maybe_id));
             },
             Msg::SetDataList(v) => self.data_list = v,
-            Msg::Error(e) => log::error!("Message not handled: {}", e),
+            Msg::Error(e) => log::error!("Data Widget Error: {}", e),
         }
         true
     }
@@ -78,15 +78,14 @@ impl Component for DataWidget {
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         self.props = props;
 
-        use crate::app_state::data_manager::Incoming;
-        self.data_manager.send(Incoming::GetAllData);
+        //use crate::app_state::data_manager::Incoming;
+        //self.data_manager.send(Incoming::GetAllData);
         
         self.update_dropdown();
-        true
+        false
     }
 
     fn view(&self) -> Html {
-        log::debug!("Redraw Data Widget");
         let nothing_is_selected = self.data == None;
         let on_selection = self.link.callback(|value: ChangeData| match value {
             // e will be a data id or "new" as you can see in the code below.

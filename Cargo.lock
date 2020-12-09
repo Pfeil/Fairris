@@ -115,6 +115,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "console_error_panic_hook",
+ "http",
  "log",
  "rand",
  "serde",
