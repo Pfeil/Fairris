@@ -1,14 +1,10 @@
 # FAIR DO Client
 
-A client (single page web application) that shall demonstrate typical FAIR DO use cases using real data sets. Use cases currently planned are:
-
-- [DONE, needs improvements] register your already hosted data as a FAIR Digital Object
-- retrieve your registered FDO using its PID (Persistent Identifier)
-- basic search operations
+A client (single page web application) that shall demonstrate typical FAIR DO use cases.
 
 ## Documentation
 
-About more documentation of how this application communicates with other services, refer to the documentation of the testbed4inf.
+About more documentation about how this application communicates with other services, refer to the documentation of the testbed4inf.
 
 ## Usage
 
