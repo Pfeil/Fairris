@@ -24,7 +24,7 @@ pub type MaybeProfile = Result<Profile, Option<Pid>>;
 impl From<&Profile> for Pid {
     fn from(p: &Profile) -> Self {
         match p {
-            Profile::Testbed => Pid(r#"21.T11148/61fd3446879407065218"#.into()),
+            Profile::Testbed => Pid("21.T11148/301c6f04763a16f0f72a".into()),
         }
     }
 }
