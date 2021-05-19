@@ -31,7 +31,7 @@ impl PidRecord {
     }
 
     pub fn describe(&self) -> String {
-        String::from("TODO implement descripton of records")
+        String::from("None")
     }
 
     pub fn same_content_like(&self, other: &Self) -> bool {

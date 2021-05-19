@@ -105,7 +105,7 @@ impl Component for DataWidget {
             Some((id, Data::Collection(collection))) => html! {<CollectionForm id=id collection=collection />},
         };
         html! {
-            <details open=true>
+            <details>
                 <summary>{ "Data" }</summary>
                 <div class="two-column-lefty header">
                     <div class="stacking">

@@ -34,7 +34,8 @@ impl HasProfileKey for Policy {
 
 impl Default for Policy {
     fn default() -> Self {
-        Policy("your/favorite/license/etc".into())
+        // TODO this PID is not a real policy object. It's for the visuals only.
+        Policy("21.T11148/37d0f4689c6ea3301787".into())
     }
 }
 

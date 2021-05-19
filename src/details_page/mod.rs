@@ -150,7 +150,7 @@ impl Component for DetailsPage {
         html! {
             <div id="content" class="maincolumns scroll-vertical">
                 <div class="two-column-lefty">
-                    <div class="image-placeholder"><p>{ "IMAGE" }</p></div>
+                    <div class="image-placeholder"><p>{ "Preview" }</p></div>
                     <div class="two-column-lefty">
                         <p class="align-right">{ "PID:" }</p>
                         <p>{ data.pid().as_str() }</p>
